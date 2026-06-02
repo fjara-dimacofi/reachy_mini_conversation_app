@@ -263,6 +263,23 @@ async function sendText(text, verbatim) {
   return data;
 }
 
+async function setListening(enabled) {
+  const resp = await fetchWithTimeout(
+    "/listening",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: !!enabled }),
+    },
+    5000,
+  );
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(data.error || "listening_failed");
+  }
+  return data;
+}
+
 async function getVoices() {
   try {
     const url = new URL("/voices", window.location.origin);
@@ -359,6 +376,8 @@ async function init() {
   const sayText = document.getElementById("say-text");
   const saySend = document.getElementById("say-send");
   const sayStatus = document.getElementById("say-status");
+  const listeningToggle = document.getElementById("listening-toggle");
+  const listeningLabel = document.getElementById("listening-label");
   const formTitle = document.getElementById("form-title");
   const formCopy = document.getElementById("form-copy");
   const apiKeyFields = document.getElementById("api-key-fields");
@@ -921,6 +940,33 @@ async function init() {
       if (ev.key === "Enter" && !ev.shiftKey) {
         ev.preventDefault();
         submitSayText();
+      }
+    });
+
+    function renderListeningLabel(enabled) {
+      listeningLabel.textContent = enabled
+        ? "On — Reachy responds to speech"
+        : "Off — Reachy ignores the microphone";
+    }
+    // Reflect the backend's current state on load.
+    if (st.listening_enabled !== undefined) {
+      listeningToggle.checked = !!st.listening_enabled;
+    }
+    renderListeningLabel(listeningToggle.checked);
+    listeningToggle.addEventListener("change", async () => {
+      const enabled = listeningToggle.checked;
+      renderListeningLabel(enabled);
+      listeningToggle.disabled = true;
+      try {
+        await setListening(enabled);
+        setStatusMessage(sayStatus, enabled ? "Active listening on." : "Active listening off.", "ok");
+      } catch (e) {
+        // Revert the UI if the request failed.
+        listeningToggle.checked = !enabled;
+        renderListeningLabel(!enabled);
+        setStatusMessage(sayStatus, `Failed to update listening${e.message ? ": " + e.message : ""}`, "error");
+      } finally {
+        listeningToggle.disabled = false;
       }
     });
 

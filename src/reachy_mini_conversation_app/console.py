@@ -102,6 +102,9 @@ class LocalStream:
         self._settings_app: Optional[FastAPI] = settings_app
         self._instance_path: Optional[str] = instance_path
         self._settings_initialized = False
+        # When False, mic frames are read but not forwarded to the handler, so
+        # Reachy stops responding to ambient speech (e.g. when driven by text).
+        self._listening_enabled = True
         self._asyncio_loop = None
         self._active_backend_name = get_backend_choice()
         self._backend_connection_state = "not_started"
@@ -495,6 +498,9 @@ class LocalStream:
             text: str
             verbatim: bool = False
 
+        class ListeningPayload(BaseModel):
+            enabled: bool
+
         def _status_payload() -> dict[str, object]:
             backend_provider = get_backend_choice()
             active_backend = self._active_backend()
@@ -532,6 +538,7 @@ class LocalStream:
                 "can_proceed_with_gemini": can_proceed_with_gemini,
                 "can_proceed_with_hf": can_proceed_with_hf,
                 "requires_restart": requires_restart,
+                "listening_enabled": self._listening_enabled,
                 **backend_connection,
             }
 
@@ -666,6 +673,13 @@ class LocalStream:
                 self._asyncio_loop,
             )
             return JSONResponse({"ok": True})
+
+        # POST /listening -> enable/disable forwarding mic audio to the handler
+        @self._settings_app.post("/listening")
+        def _set_listening(payload: ListeningPayload) -> JSONResponse:
+            self._listening_enabled = bool(payload.enabled)
+            logger.info("Active listening %s", "enabled" if self._listening_enabled else "disabled")
+            return JSONResponse({"ok": True, "listening_enabled": self._listening_enabled})
 
         self._settings_initialized = True
 
@@ -897,7 +911,9 @@ class LocalStream:
 
         while not self._stop_event.is_set():
             audio_frame = self._robot.media.get_audio_sample()
-            if audio_frame is not None:
+            # Always drain the device; only forward to the handler while
+            # active listening is enabled.
+            if audio_frame is not None and self._listening_enabled:
                 await self.handler.receive((input_sample_rate, audio_frame))
             await asyncio.sleep(0)  # avoid busy loop
 
