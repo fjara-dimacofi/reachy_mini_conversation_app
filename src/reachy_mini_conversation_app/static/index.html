@@ -159,6 +159,41 @@
         </div>
       </div>
 
+      <div id="say-panel" class="panel hidden">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Text input</p>
+            <h2>Make Reachy talk</h2>
+          </div>
+          <span class="chip">Live</span>
+        </div>
+        <p class="muted">Type a message and send it to Reachy without speaking. Choose whether Reachy should interpret it like spoken input or say it back word for word.</p>
+        <div class="row">
+          <label>Mode</label>
+          <div class="say-mode" role="radiogroup" aria-label="Text input mode">
+            <label class="say-mode-option">
+              <input type="radio" name="say-mode" value="interpret" checked />
+              <span>Interpret</span>
+            </label>
+            <label class="say-mode-option">
+              <input type="radio" name="say-mode" value="verbatim" />
+              <span>Say verbatim</span>
+            </label>
+          </div>
+        </div>
+        <div class="row">
+          <label for="say-text">Message</label>
+          <textarea id="say-text" rows="3" placeholder="Type something for Reachy to say…"></textarea>
+        </div>
+        <div class="row row-save">
+          <label></label>
+          <div class="actions">
+            <button id="say-send">Send</button>
+          </div>
+        </div>
+        <p id="say-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </div>
+
       <div id="personality-panel" class="panel hidden">
         <div class="panel-heading">
           <div>

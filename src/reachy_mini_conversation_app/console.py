@@ -491,6 +491,10 @@ class LocalStream:
             hf_host: Optional[str] = None
             hf_port: Optional[int] = None
 
+        class SayPayload(BaseModel):
+            text: str
+            verbatim: bool = False
+
         def _status_payload() -> dict[str, object]:
             backend_provider = get_backend_choice()
             active_backend = self._active_backend()
@@ -644,6 +648,24 @@ class LocalStream:
             except Exception as e:
                 logger.warning(f"API key validation failed: {e}")
                 return JSONResponse({"valid": False, "error": "validation_error"}, status_code=500)
+
+        # POST /say -> inject text from the web UI for Reachy to speak
+        @self._settings_app.post("/say")
+        def _say(payload: SayPayload) -> JSONResponse:
+            text = (payload.text or "").strip()
+            if not text:
+                return JSONResponse({"ok": False, "error": "empty_text"}, status_code=400)
+            connected = (
+                getattr(self.handler, "connection", None) is not None
+                or getattr(self.handler, "session", None) is not None
+            )
+            if self._asyncio_loop is None or not connected:
+                return JSONResponse({"ok": False, "error": "not_connected"}, status_code=409)
+            asyncio.run_coroutine_threadsafe(
+                self.handler.send_text_input(text, payload.verbatim),
+                self._asyncio_loop,
+            )
+            return JSONResponse({"ok": True})
 
         self._settings_initialized = True
 

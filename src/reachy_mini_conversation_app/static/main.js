@@ -246,6 +246,23 @@ async function applyPersonality(name, { persist = false } = {}) {
   return await resp.json();
 }
 
+async function sendText(text, verbatim) {
+  const resp = await fetchWithTimeout(
+    "/say",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, verbatim: !!verbatim }),
+    },
+    5000,
+  );
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(data.error || "say_failed");
+  }
+  return data;
+}
+
 async function getVoices() {
   try {
     const url = new URL("/voices", window.location.origin);
@@ -338,6 +355,10 @@ async function init() {
   const configuredCopy = document.getElementById("configured-copy");
   const configuredChip = document.getElementById("configured-chip");
   const personalityPanel = document.getElementById("personality-panel");
+  const sayPanel = document.getElementById("say-panel");
+  const sayText = document.getElementById("say-text");
+  const saySend = document.getElementById("say-send");
+  const sayStatus = document.getElementById("say-status");
   const formTitle = document.getElementById("form-title");
   const formCopy = document.getElementById("form-copy");
   const apiKeyFields = document.getElementById("api-key-fields");
@@ -866,6 +887,42 @@ async function init() {
       setStatusMessage(pStatus, "Voices unavailable. The backend default voice will be used.", "warn");
     }
     show(personalityPanel, true);
+    show(sayPanel, true);
+
+    async function submitSayText() {
+      const text = (sayText.value || "").trim();
+      if (!text) {
+        setStatusMessage(sayStatus, "Type a message first.", "warn");
+        return;
+      }
+      const verbatim =
+        document.querySelector('input[name="say-mode"]:checked')?.value === "verbatim";
+      saySend.disabled = true;
+      setStatusMessage(sayStatus, "Sending...");
+      try {
+        await sendText(text, verbatim);
+        sayText.value = "";
+        setStatusMessage(sayStatus, verbatim ? "Sent. Reachy will say it." : "Sent.", "ok");
+      } catch (e) {
+        const msg =
+          e.message === "not_connected"
+            ? "Reachy isn't connected to the backend yet."
+            : e.message === "empty_text"
+              ? "Type a message first."
+              : `Failed to send${e.message ? ": " + e.message : ""}`;
+        setStatusMessage(sayStatus, msg, "error");
+      } finally {
+        saySend.disabled = false;
+      }
+    }
+
+    saySend.addEventListener("click", submitSayText);
+    sayText.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" && !ev.shiftKey) {
+        ev.preventDefault();
+        submitSayText();
+      }
+    });
 
     pApplyVoice.addEventListener("click", async () => {
       const voice = pVoice.value;

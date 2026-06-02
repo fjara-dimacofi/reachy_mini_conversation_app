@@ -1310,3 +1310,72 @@ async def test_openai_excludes_head_tracking_when_no_head_tracker(monkeypatch: A
     tool_names = [t["name"] for t in session_tools]
     assert "head_tracking" not in tool_names, "case 2 failed: camera_worker.head_tracker=None"
     assert "fake_tool" in tool_names, "case 2 failed: a non-head-tracking tool was unexpectedly excluded"
+
+
+@pytest.mark.asyncio
+async def test_send_text_input_interpret(monkeypatch: Any) -> None:
+    """Interpret mode creates a user item and requests a default response."""
+    loop = asyncio.get_event_loop()
+    handler = _build_handler(loop)
+
+    created_items: list[dict[str, Any]] = []
+
+    class FakeItem:
+        async def create(self, **kw: Any) -> None:
+            created_items.append(kw["item"])
+
+    class FakeConversation:
+        item = FakeItem()
+
+    handler.connection = SimpleNamespace(conversation=FakeConversation())
+    safe_response_create = AsyncMock()
+    monkeypatch.setattr(handler, "_safe_response_create", safe_response_create)
+
+    await handler.send_text_input("hello there", verbatim=False)
+
+    assert created_items == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "hello there"}],
+        }
+    ]
+    safe_response_create.assert_awaited_once_with()
+
+
+@pytest.mark.asyncio
+async def test_send_text_input_verbatim(monkeypatch: Any) -> None:
+    """Verbatim mode creates the user item and requests a response with instructions."""
+    loop = asyncio.get_event_loop()
+    handler = _build_handler(loop)
+
+    class FakeItem:
+        async def create(self, **kw: Any) -> None:
+            pass
+
+    class FakeConversation:
+        item = FakeItem()
+
+    handler.connection = SimpleNamespace(conversation=FakeConversation())
+    safe_response_create = AsyncMock()
+    monkeypatch.setattr(handler, "_safe_response_create", safe_response_create)
+
+    await handler.send_text_input("say this exactly", verbatim=True)
+
+    safe_response_create.assert_awaited_once()
+    _, kwargs = safe_response_create.await_args
+    assert "verbatim" in kwargs["response"]["instructions"].lower()
+
+
+@pytest.mark.asyncio
+async def test_send_text_input_no_connection(monkeypatch: Any) -> None:
+    """With no connection, send_text_input is a no-op and never queues a response."""
+    loop = asyncio.get_event_loop()
+    handler = _build_handler(loop)
+    handler.connection = None
+    safe_response_create = AsyncMock()
+    monkeypatch.setattr(handler, "_safe_response_create", safe_response_create)
+
+    await handler.send_text_input("hello", verbatim=False)
+
+    safe_response_create.assert_not_awaited()

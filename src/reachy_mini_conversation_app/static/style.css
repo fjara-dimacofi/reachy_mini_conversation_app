@@ -402,6 +402,31 @@ button.ghost:hover { border-color: rgba(94, 240, 193, 0.4); }
   min-width: 0;
 }
 
+/* Make Reachy talk */
+.say-mode {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.say-mode-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.say-mode-option:hover { border-color: rgba(94, 240, 193, 0.4); }
+.say-mode-option:has(input:checked) {
+  border-color: var(--accent);
+  background: rgba(94, 240, 193, 0.1);
+}
+#say-text { resize: vertical; }
+#say-panel .row { align-items: start; }
+
 /* Personality layout */
 .row {
   display: grid;

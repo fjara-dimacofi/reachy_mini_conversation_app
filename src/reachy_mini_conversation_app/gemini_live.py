@@ -739,6 +739,24 @@ class GeminiLiveHandler(ConversationHandler):
             idle_duration=idle_duration,
         )
 
+    async def send_text_input(self, text: str, verbatim: bool = False) -> None:
+        """Inject text from the web UI as a user turn.
+
+        When ``verbatim`` is True the model is instructed to speak the text back
+        word for word; otherwise the text is treated as ordinary user input and
+        the model responds in character.
+        """
+        if not self.session:
+            logger.debug("No session, cannot send text input")
+            return
+        self.last_activity_time = asyncio.get_event_loop().time()
+        msg = (
+            f"Say the following text back exactly, word for word, with nothing added: {text}"
+            if verbatim
+            else text
+        )
+        await self.session.send_realtime_input(text=msg)
+
     async def get_available_voices(self) -> list[str]:
         """Return the list of available Gemini voices."""
         return list(GEMINI_AVAILABLE_VOICES)

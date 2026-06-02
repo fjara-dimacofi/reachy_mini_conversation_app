@@ -1038,3 +1038,33 @@ class BaseRealtimeHandler(ConversationHandler, ABC):
             available_tool_names=available_tool_names,
             idle_duration=idle_duration,
         )
+
+    async def send_text_input(self, text: str, verbatim: bool = False) -> None:
+        """Inject text from the web UI as a user turn.
+
+        When ``verbatim`` is True the model is instructed to speak the text back
+        word for word; otherwise the text is treated as ordinary user input and
+        the model responds in character.
+        """
+        if not self.connection:
+            logger.debug("No connection, cannot send text input")
+            return
+        self.last_activity_time = asyncio.get_event_loop().time()
+        await self.connection.conversation.item.create(
+            item={
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": text}],
+            },
+        )
+        if verbatim:
+            await self._safe_response_create(
+                response=RealtimeResponseCreateParamsParam(
+                    instructions=(
+                        "Speak the user's last message back verbatim, word for word, "
+                        "with no additions, commentary, or function calls."
+                    ),
+                ),
+            )
+        else:
+            await self._safe_response_create()
