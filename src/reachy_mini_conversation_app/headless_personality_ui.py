@@ -18,6 +18,7 @@ from .config import (
     config,
     get_default_voice_for_backend,
     get_available_voices_for_backend,
+    get_available_models_for_backend,
 )
 from .conversation_handler import ConversationHandler
 from .headless_personality import (
@@ -321,6 +322,69 @@ def mount_personality_routes(
             return {"voice": fut.result(timeout=10)}
         except Exception:
             return {"voice": fallback_voice}
+
+    @app.get("/models")
+    async def _models() -> list[str]:
+        loop = get_loop()
+        if loop is None:
+            return get_available_models_for_backend()
+
+        async def _get_m() -> list[str]:
+            try:
+                models = await handler.get_available_models()
+                return models if models else get_available_models_for_backend()
+            except Exception:
+                return get_available_models_for_backend()
+
+        try:
+            fut = asyncio.run_coroutine_threadsafe(_get_m(), loop)
+            return fut.result(timeout=10)
+        except Exception:
+            return get_available_models_for_backend()
+
+    @app.get("/models/current")
+    async def _current_model() -> dict[str, str]:
+        loop = get_loop()
+        fallback_model = config.MODEL_NAME
+        if loop is None:
+            return {"model": fallback_model}
+
+        def _get_current() -> str:
+            try:
+                return handler.get_current_model() or fallback_model
+            except Exception:
+                return fallback_model
+
+        try:
+            fut = asyncio.run_coroutine_threadsafe(asyncio.to_thread(_get_current), loop)
+            return {"model": fut.result(timeout=10)}
+        except Exception:
+            return {"model": fallback_model}
+
+    @app.post("/models/apply")
+    async def _apply_model(request: Request, model: str | None = Query(None)) -> dict:  # type: ignore
+        model = str(model or "")
+        if not model:
+            try:
+                raw = await request.json()
+            except Exception:
+                raw = {}
+            model = str(raw.get("model", "") or "")
+        if not model:
+            return JSONResponse({"ok": False, "error": "missing_model"}, status_code=400)  # type: ignore
+        loop = get_loop()
+        if loop is None:
+            return JSONResponse({"ok": False, "error": "loop_unavailable"}, status_code=503)  # type: ignore
+
+        async def _do() -> str:
+            return await handler.change_model(model)
+
+        try:
+            fut = asyncio.run_coroutine_threadsafe(_do(), loop)
+            status = fut.result(timeout=10)
+            return {"ok": True, "status": status}
+        except Exception as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=500)  # type: ignore
 
     @app.post("/voices/apply")
     async def _apply_voice(request: Request, voice: str | None = Query(None)) -> dict:  # type: ignore

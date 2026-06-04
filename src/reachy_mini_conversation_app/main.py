@@ -119,7 +119,7 @@ def run(
         logger.error("Failed to initialize tools: %s", e)
         sys.exit(1)
 
-    if args.no_camera and args.head_tracker is not None:
+    if args.no_camera and args.head_tracker not in (None, "none"):
         logger.warning("Head tracking disabled: --no-camera flag is set. Remove --no-camera to enable head tracking.")
 
     if robot is None:

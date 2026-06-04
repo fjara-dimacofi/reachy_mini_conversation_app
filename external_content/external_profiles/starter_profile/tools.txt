@@ -9,3 +9,4 @@ play_emotion
 stop_emotion
 move_head
 starter_custom_tool
+send_email

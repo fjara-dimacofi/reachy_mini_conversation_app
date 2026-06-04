@@ -305,6 +305,43 @@ async function getCurrentVoice() {
   }
 }
 
+async function getModels() {
+  try {
+    const url = new URL("/models", window.location.origin);
+    url.searchParams.set("_", Date.now().toString());
+    const resp = await fetchWithTimeout(url, {}, 3000);
+    if (!resp.ok) throw new Error("models_failed");
+    return await resp.json();
+  } catch (e) {
+    return [];
+  }
+}
+
+async function getCurrentModel() {
+  try {
+    const url = new URL("/models/current", window.location.origin);
+    url.searchParams.set("_", Date.now().toString());
+    const resp = await fetchWithTimeout(url, {}, 3000);
+    if (!resp.ok) throw new Error("current_model_failed");
+    const data = await resp.json();
+    return typeof data.model === "string" ? data.model : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+async function applyModel(model) {
+  const url = new URL("/models/apply", window.location.origin);
+  url.searchParams.set("model", model || "");
+  url.searchParams.set("_", Date.now().toString());
+  const resp = await fetchWithTimeout(url, { method: "POST" }, 12000);
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error(data.error || "apply_model_failed");
+  }
+  return await resp.json();
+}
+
 function show(el, flag) {
   el.classList.toggle("hidden", !flag);
 }
@@ -407,6 +444,9 @@ async function init() {
   const pStatus = document.getElementById("personality-status");
   const pVoice = document.getElementById("voice-select");
   const pApplyVoice = document.getElementById("apply-voice");
+  const pModelRow = document.getElementById("model-row");
+  const pModel = document.getElementById("model-select");
+  const pApplyModel = document.getElementById("apply-model");
   const pAvail = document.getElementById("tools-available");
 
   const AUTO_WITH = {
@@ -824,6 +864,25 @@ async function init() {
       opt.textContent = "Backend default (recommended)";
       pVoice.appendChild(opt);
     }
+    // Model selector: only shown when the active backend exposes more than one
+    // switchable model (e.g. Gemini Live). Hidden otherwise.
+    const models = await getModels();
+    let currentModel = await getCurrentModel();
+    pModel.innerHTML = "";
+    if (models.length > 1) {
+      for (const m of models) {
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = m;
+        pModel.appendChild(opt);
+      }
+      if (models.includes(currentModel)) {
+        pModel.value = currentModel;
+      }
+      show(pModelRow, true);
+    } else {
+      show(pModelRow, false);
+    }
     setStartupLabel(startupChoice);
 
     function renderToolCheckboxes(available, enabled) {
@@ -981,6 +1040,20 @@ async function init() {
         setStatusMessage(pStatus, res.status || `Voice changed to ${voice}.`, "ok");
       } catch (e) {
         setStatusMessage(pStatus, `Failed to apply voice${e.message ? ": " + e.message : ""}`, "error");
+      }
+    });
+
+    pApplyModel.addEventListener("click", async () => {
+      const model = pModel.value;
+      if (!model) return;
+      setStatusMessage(pStatus, "Applying model...");
+      try {
+        const res = await applyModel(model);
+        currentModel = model;
+        pModel.value = model;
+        setStatusMessage(pStatus, res.status || `Model changed to ${model}.`, "ok");
+      } catch (e) {
+        setStatusMessage(pStatus, `Failed to apply model${e.message ? ": " + e.message : ""}`, "error");
       }
     });
 

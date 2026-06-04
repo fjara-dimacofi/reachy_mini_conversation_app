@@ -67,3 +67,19 @@ class ConversationHandler(AsyncStreamHandler, ABC):
     async def change_voice(self, voice: str) -> str:
         """Change the current voice."""
         ...
+
+    async def get_available_models(self) -> list[str]:
+        """Return models selectable for the active backend.
+
+        Defaults to no switchable models; backends that support runtime model
+        switching (e.g. Gemini Live) override this.
+        """
+        return []
+
+    def get_current_model(self) -> str:
+        """Return the currently active model (empty when not applicable)."""
+        return ""
+
+    async def change_model(self, model: str) -> str:
+        """Change the active model. Not supported by default."""
+        return "Model switching is not supported for this backend."

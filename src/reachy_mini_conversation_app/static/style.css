@@ -492,7 +492,8 @@ button.ghost:hover { border-color: rgba(94, 240, 193, 0.4); }
 #personality-panel .row-top {
   grid-template-columns: 160px 1fr auto auto auto;
 }
-#personality-panel .row-voice {
+#personality-panel .row-voice,
+#personality-panel .row-model {
   grid-template-columns: 160px 1fr auto;
 }
 
@@ -563,12 +564,14 @@ button.ghost:hover { border-color: rgba(94, 240, 193, 0.4); }
 
 @media (max-width: 900px) {
   #personality-panel .row-top,
-  #personality-panel .row-voice {
+  #personality-panel .row-voice,
+  #personality-panel .row-model {
     grid-template-columns: 1fr;
   }
 
   #personality-panel .row-top button,
-  #personality-panel .row-voice button {
+  #personality-panel .row-voice button,
+  #personality-panel .row-model button {
     width: 100%;
     justify-content: center;
   }

@@ -28,8 +28,10 @@ from scipy.signal import resample
 
 from reachy_mini_conversation_app.config import (
     GEMINI_BACKEND,
+    GEMINI_AVAILABLE_MODELS,
     GEMINI_AVAILABLE_VOICES,
     DEFAULT_VOICE_BY_BACKEND,
+    DEFAULT_MODEL_NAME_BY_BACKEND,
     config,
 )
 from reachy_mini_conversation_app.prompts import get_session_voice, get_session_instructions
@@ -140,6 +142,24 @@ def _resolve_gemini_startup_voice(voice: str | None) -> str | None:
     return resolved
 
 
+def _resolve_gemini_model(model: str | None) -> str:
+    """Map a requested model name to a valid Gemini model.
+
+    Falls back to the configured model when the requested name is unknown.
+    """
+    if model:
+        model_map = {candidate.lower(): candidate for candidate in GEMINI_AVAILABLE_MODELS}
+        resolved = model_map.get(model.lower())
+        if resolved is not None:
+            return resolved
+        logger.warning(
+            "Ignoring unknown Gemini model %r; expected one of %s",
+            model,
+            GEMINI_AVAILABLE_MODELS,
+        )
+    return config.MODEL_NAME or DEFAULT_MODEL_NAME_BY_BACKEND[GEMINI_BACKEND]
+
+
 class GeminiLiveHandler(ConversationHandler):
     """Gemini Live API handler for fastrtc Stream."""
 
@@ -149,6 +169,7 @@ class GeminiLiveHandler(ConversationHandler):
         gradio_mode: bool = False,
         instance_path: Optional[str] = None,
         startup_voice: Optional[str] = None,
+        startup_model: Optional[str] = None,
     ):
         """Initialize the handler."""
         super().__init__(
@@ -161,6 +182,7 @@ class GeminiLiveHandler(ConversationHandler):
         self.gradio_mode = gradio_mode
         self.instance_path = instance_path
         self._voice_override: str | None = _resolve_gemini_startup_voice(startup_voice)
+        self._model_override: str | None = startup_model
 
         self.session: Any = None  # google.genai live session
         self.output_queue: "asyncio.Queue[Tuple[int, NDArray[np.int16]] | AdditionalOutputs]" = asyncio.Queue()
@@ -192,6 +214,7 @@ class GeminiLiveHandler(ConversationHandler):
             self.gradio_mode,
             self.instance_path,
             startup_voice=self._voice_override,
+            startup_model=self._model_override,
         )
 
     def _set_listening_state(self, listening: bool) -> None:
@@ -281,6 +304,31 @@ class GeminiLiveHandler(ConversationHandler):
     def get_current_voice(self) -> str:
         """Return the resolved Gemini voice currently selected for this handler."""
         return _resolve_gemini_voice(self._voice_override or get_session_voice())
+
+    def _active_model(self) -> str:
+        """Return the model this handler should connect with."""
+        return _resolve_gemini_model(self._model_override)
+
+    async def get_available_models(self) -> list[str]:
+        """Return the list of selectable Gemini models."""
+        return list(GEMINI_AVAILABLE_MODELS)
+
+    def get_current_model(self) -> str:
+        """Return the Gemini model currently selected for this handler."""
+        return self._active_model()
+
+    async def change_model(self, model: str) -> str:
+        """Change only the model and restart the session."""
+        resolved = _resolve_gemini_model(model)
+        self._model_override = resolved
+        if getattr(self, "client", None) is not None:
+            try:
+                await self._restart_session()
+                return f"Model changed to {resolved}."
+            except Exception as e:
+                logger.warning("Failed to restart session for model change: %s", e)
+                return "Model change failed. Will take effect on next connection."
+        return "Model changed. Will take effect on next connection."
 
     async def start_up(self) -> None:
         """Start the handler with retries on unexpected closure."""
@@ -394,7 +442,7 @@ class GeminiLiveHandler(ConversationHandler):
 
         logger.info(
             "Gemini Live config: model=%r voice=%r tools=%d",
-            config.MODEL_NAME,
+            self._active_model(),
             voice,
             len(function_declarations),
         )
@@ -545,7 +593,7 @@ class GeminiLiveHandler(ConversationHandler):
         live_config = self._build_live_config()
 
         async with self.client.aio.live.connect(
-            model=config.MODEL_NAME,
+            model=self._active_model(),
             config=live_config,
         ) as session:
             self.session = session
@@ -683,7 +731,7 @@ class GeminiLiveHandler(ConversationHandler):
         """Emit audio frame to be played by the speaker."""
         # Handle idle
         idle_duration = time.monotonic() - self.last_activity_time
-        if idle_duration > 15.0 and self.deps.movement_manager.is_idle():
+        if idle_duration > config.IDLE_INTERVAL_S and self.deps.movement_manager.is_idle():
             try:
                 await self.send_idle_signal(idle_duration)
             except Exception as e:
@@ -749,7 +797,7 @@ class GeminiLiveHandler(ConversationHandler):
         if not self.session:
             logger.debug("No session, cannot send text input")
             return
-        self.last_activity_time = asyncio.get_event_loop().time()
+        self.last_activity_time = time.monotonic()
         msg = (
             f"Say the following text back exactly, word for word, with nothing added: {text}"
             if verbatim

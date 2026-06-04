@@ -24,11 +24,12 @@ def parse_args() -> tuple[argparse.Namespace, list]:  # type: ignore
     parser = argparse.ArgumentParser("Reachy Mini Conversation App")
     parser.add_argument(
         "--head-tracker",
-        choices=["yolo", "mediapipe"],
-        default=None,
+        choices=["yolo", "mediapipe", "none"],
+        default="mediapipe",
         help=(
-            "Optional head-tracking backend: yolo uses a local face detector in a subprocess, "
-            "mediapipe uses reachy_mini_toolbox in process. Disabled by default."
+            "Head-tracking backend: yolo uses a local face detector in a subprocess, "
+            "mediapipe uses reachy_mini_toolbox in process. Pass 'none' to disable. "
+            "Defaults to mediapipe."
         ),
     )
     parser.add_argument("--no-camera", default=False, action="store_true", help="Disable camera usage")
@@ -83,7 +84,7 @@ def initialize_camera_and_vision(
     vision_processor: Optional[VisionProcessor] = None
 
     if not args.no_camera:
-        if args.head_tracker is not None:
+        if args.head_tracker not in (None, "none"):
             try:
                 if args.head_tracker == "yolo":
                     from reachy_mini_conversation_app.vision.head_tracking.yolo_process import (

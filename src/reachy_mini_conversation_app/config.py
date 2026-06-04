@@ -82,7 +82,17 @@ GEMINI_AVAILABLE_VOICES: list[str] = [
     "Leda",
     "Orus",
     "Puck",
+    "Schedar",
     "Zephyr",
+]
+
+# Gemini models selectable at runtime from the web UI. The first entry is the
+# default conversational Live model; additional entries are offered in the model
+# selector. Note that only Live API models support the bidirectional streaming
+# this app uses — other model families may fail to connect.
+GEMINI_AVAILABLE_MODELS: list[str] = [
+    "gemini-3.1-flash-live-preview",
+    "gemini-3.1-flash-tts-preview",
 ]
 
 OPENAI_BACKEND = "openai"
@@ -194,6 +204,22 @@ def _env_flag(name: str, default: bool = False) -> bool:
 
     logger.warning("Invalid boolean value for %s=%r, using default=%s", name, raw, default)
     return default
+
+
+def _env_float(name: str, default: float) -> float:
+    """Parse a positive float environment variable, falling back to default."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        logger.warning("Invalid float value for %s=%r, using default=%s", name, raw, default)
+        return default
+    if value <= 0:
+        logger.warning("%s must be > 0, got %r; using default=%s", name, raw, default)
+        return default
+    return value
 
 
 def _normalize_hf_connection_mode(value: str | None) -> str | None:
@@ -394,6 +420,10 @@ class Config:
     AUTOLOAD_EXTERNAL_TOOLS = _env_flag("AUTOLOAD_EXTERNAL_TOOLS", default=False)
     REACHY_MINI_CUSTOM_PROFILE = LOCKED_PROFILE or os.getenv("REACHY_MINI_CUSTOM_PROFILE")
 
+    # Seconds of inactivity before the robot proactively does an idle behavior
+    # (talk/emotion/dance). Higher = less frequent unprompted behavior.
+    IDLE_INTERVAL_S = _env_float("IDLE_INTERVAL_S", default=60.0)
+
     logger.debug(f"Custom Profile: {REACHY_MINI_CUSTOM_PROFILE}")
 
     def __init__(self) -> None:
@@ -481,6 +511,7 @@ def refresh_runtime_config_from_env() -> None:
     config.LOCAL_VISION_MODEL = os.getenv("LOCAL_VISION_MODEL", "HuggingFaceTB/SmolVLM2-2.2B-Instruct")
     config.HF_TOKEN = os.getenv("HF_TOKEN")
     config.REACHY_MINI_CUSTOM_PROFILE = LOCKED_PROFILE or os.getenv("REACHY_MINI_CUSTOM_PROFILE")
+    config.IDLE_INTERVAL_S = _env_float("IDLE_INTERVAL_S", default=60.0)
 
 
 def get_backend_choice(model_name: str | None = None) -> str:
@@ -509,6 +540,19 @@ def get_available_voices_for_backend(backend: str | None = None) -> list[str]:
     if normalized_backend == HF_BACKEND:
         return list(HF_AVAILABLE_VOICES)
     return list(AVAILABLE_VOICES)
+
+
+def get_available_models_for_backend(backend: str | None = None) -> list[str]:
+    """Return the selectable model list for a backend selector value.
+
+    Gemini exposes a curated list of switchable models; other backends expose a
+    single fixed model (empty when the backend has no named model).
+    """
+    normalized_backend = get_backend_choice() if backend is None else _normalize_backend_provider(backend)
+    if normalized_backend == GEMINI_BACKEND:
+        return list(GEMINI_AVAILABLE_MODELS)
+    default_model = DEFAULT_MODEL_NAME_BY_BACKEND[normalized_backend]
+    return [default_model] if default_model else []
 
 
 def get_default_voice_for_backend(backend: str | None = None) -> str:

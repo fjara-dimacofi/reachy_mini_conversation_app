@@ -13,7 +13,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from reachy_mini_conversation_app.config import GEMINI_AVAILABLE_VOICES, config
+from reachy_mini_conversation_app.config import GEMINI_AVAILABLE_MODELS, GEMINI_AVAILABLE_VOICES, config
 from reachy_mini_conversation_app.console import LocalStream
 from reachy_mini_conversation_app.startup_settings import (
     StartupSettings,
@@ -601,6 +601,57 @@ def test_headless_personality_routes_return_gemini_voices_when_backend_selected(
 
     assert response.status_code == 200
     assert response.json() == GEMINI_AVAILABLE_VOICES
+
+
+def test_headless_personality_routes_return_gemini_models_when_backend_selected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Headless personality UI should expose Gemini models when Gemini is selected."""
+    monkeypatch.setattr(config, "BACKEND_PROVIDER", "gemini")
+    monkeypatch.setattr(config, "MODEL_NAME", "gemini-3.1-flash-live-preview")
+
+    app = FastAPI()
+    handler = MagicMock()
+    mount_personality_routes(app, handler, lambda: None)
+
+    client = TestClient(app)
+    response = client.get("/models")
+
+    assert response.status_code == 200
+    assert response.json() == GEMINI_AVAILABLE_MODELS
+
+
+def test_headless_personality_routes_apply_model_accepts_query_param() -> None:
+    """Headless personality UI should apply a model change from a POST query param."""
+    app = FastAPI()
+    handler = MagicMock()
+    handler.change_model = AsyncMock(return_value="Model changed to gemini-3.1-flash-tts-preview.")
+
+    loop = asyncio.new_event_loop()
+    started = threading.Event()
+
+    def _run_loop() -> None:
+        asyncio.set_event_loop(loop)
+        started.set()
+        loop.run_forever()
+
+    thread = threading.Thread(target=_run_loop, daemon=True)
+    thread.start()
+    started.wait(timeout=1.0)
+
+    try:
+        mount_personality_routes(app, handler, lambda: loop)
+
+        client = TestClient(app)
+        response = client.post("/models/apply?model=gemini-3.1-flash-tts-preview")
+
+        assert response.status_code == 200
+        assert response.json() == {"ok": True, "status": "Model changed to gemini-3.1-flash-tts-preview."}
+        handler.change_model.assert_awaited_once_with("gemini-3.1-flash-tts-preview")
+    finally:
+        loop.call_soon_threadsafe(loop.stop)
+        thread.join(timeout=1.0)
+        loop.close()
 
 
 def test_headless_personality_routes_load_builtin_default_tools() -> None:
