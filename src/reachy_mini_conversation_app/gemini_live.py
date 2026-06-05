@@ -188,6 +188,8 @@ class GeminiLiveHandler(ConversationHandler):
         self.output_queue: "asyncio.Queue[Tuple[int, NDArray[np.int16]] | AdditionalOutputs]" = asyncio.Queue()
 
         self.last_activity_time = time.monotonic()
+        # Tracks the last time a human actually spoke, for the inactivity session clear.
+        self.last_human_input_time = time.monotonic()
         self.start_time = time.monotonic()
         self.is_idle_tool_call = False
 
@@ -664,6 +666,8 @@ class GeminiLiveHandler(ConversationHandler):
                                     logger.debug("User transcript chunk: %s", transcript)
                                     self._pending_user_transcript_chunks.append(transcript)
                                     self._set_listening_state(True)
+                                    # Human spoke: reset the inactivity-clear timer.
+                                    self.last_human_input_time = time.monotonic()
 
                                 # Handle output transcription (model speech)
                                 if content.output_transcription and content.output_transcription.text:
@@ -729,8 +733,31 @@ class GeminiLiveHandler(ConversationHandler):
 
     async def emit(self) -> Tuple[int, NDArray[np.int16]] | AdditionalOutputs | None:
         """Emit audio frame to be played by the speaker."""
+        now = time.monotonic()
+
+        # Clear the session after prolonged human silence to avoid long-session drift.
+        # Gated on the robot being idle so we never cut off mid-turn. Resetting the
+        # timer after a clear throttles this to once per CLEAR_SESSION_AFTER_S window.
+        if (
+            config.CLEAR_SESSION_AFTER_S > 0
+            and now - self.last_human_input_time > config.CLEAR_SESSION_AFTER_S
+            and self.deps.movement_manager.is_idle()
+            and self.session is not None
+        ):
+            logger.info(
+                "Clearing session after %.0fs without human input",
+                now - self.last_human_input_time,
+            )
+            self.last_human_input_time = now
+            self.last_activity_time = now
+            try:
+                await self._restart_session()
+            except Exception as e:
+                logger.warning("Session clear skipped: %s", e)
+            return None
+
         # Handle idle
-        idle_duration = time.monotonic() - self.last_activity_time
+        idle_duration = now - self.last_activity_time
         if idle_duration > config.IDLE_INTERVAL_S and self.deps.movement_manager.is_idle():
             try:
                 await self.send_idle_signal(idle_duration)

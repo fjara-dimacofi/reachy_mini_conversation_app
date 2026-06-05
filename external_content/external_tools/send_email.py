@@ -32,6 +32,7 @@ import os
 import smtplib
 import ssl
 from email.message import EmailMessage
+from email.utils import formataddr
 from pathlib import Path
 from typing import Any, Dict
 
@@ -88,13 +89,15 @@ def _send_email_blocking(
     password: str | None,
     use_ssl: bool,
     sender: str,
+    sender_name: str,
     recipient: str,
     subject: str,
     body: str,
 ) -> None:
     """Build and send the message synchronously (run via asyncio.to_thread)."""
     msg = EmailMessage()
-    msg["From"] = sender
+    # Show a friendly display name (e.g. "Reachy <addr>") while keeping the real address.
+    msg["From"] = formataddr((sender_name, sender)) if sender_name else sender
     msg["To"] = recipient
     msg["Subject"] = subject
     msg.set_content(body)
@@ -158,10 +161,18 @@ class SendEmail(Tool):
         body = kwargs.get("body") or ""
         recipient = (kwargs.get("to") or os.environ.get("EMAIL_DEFAULT_TO") or "").strip()
 
+        # Append a sign-off so every email closes consistently. Override with the
+        # EMAIL_SIGNATURE env var; set it to an empty string to disable. A literal
+        # "\n" in the env value is treated as a line break.
+        signature = os.environ.get("EMAIL_SIGNATURE", "Saludos,\nReachy").replace("\\n", "\n")
+        if signature:
+            body = f"{body.rstrip()}\n\n{signature}\n"
+
         host = os.environ.get("SMTP_HOST", "").strip()
         username = os.environ.get("SMTP_USERNAME", "").strip() or None
         password = os.environ.get("SMTP_PASSWORD", "") or None
         sender = (os.environ.get("EMAIL_FROM") or username or "").strip()
+        sender_name = os.environ.get("EMAIL_FROM_NAME", "Reachy").strip()
         use_ssl = _truthy(os.environ.get("SMTP_USE_SSL"))
         default_port = 465 if use_ssl else 587
         try:
@@ -202,6 +213,7 @@ class SendEmail(Tool):
                 password=password,
                 use_ssl=use_ssl,
                 sender=sender,
+                sender_name=sender_name,
                 recipient=recipient,
                 subject=subject,
                 body=body,
