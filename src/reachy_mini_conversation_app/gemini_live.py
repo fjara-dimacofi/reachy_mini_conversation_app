@@ -566,12 +566,14 @@ class GeminiLiveHandler(ConversationHandler):
             logger.warning("Error sending tool result to Gemini: %s", e)
 
     async def _video_sender_loop(self) -> None:
-        """Send camera frames to Gemini Live at ~1 FPS for continuous visual context.
+        """Send camera frames to Gemini Live for continuous visual context.
 
         Only runs when a camera_worker is available. Frames are JPEG-encoded
-        and sent via send_realtime_input(video=...).
+        and sent via send_realtime_input(video=...). The interval between frames
+        is controlled by config.VIDEO_FRAME_INTERVAL_S (higher = lower API cost).
         """
-        logger.info("Video sender loop started (1 FPS)")
+        interval = config.VIDEO_FRAME_INTERVAL_S
+        logger.info("Video sender loop started (1 frame every %.1fs)", interval)
         while not self._stop_event.is_set():
             try:
                 if self.session and self.deps.camera_worker is not None:
@@ -586,7 +588,7 @@ class GeminiLiveHandler(ConversationHandler):
                     break
                 logger.debug("Video sender error (will retry): %s", e)
 
-            await asyncio.sleep(1.0)  # 1 FPS
+            await asyncio.sleep(interval)
 
         logger.info("Video sender loop stopped")
 

@@ -445,6 +445,11 @@ class Config:
     # Set to 0 to disable. Applies to the Gemini backend.
     CLEAR_SESSION_AFTER_S = _env_nonneg_float("CLEAR_SESSION_AFTER_S", default=200.0)
 
+    # Seconds between camera frames streamed to the Gemini Live API for continuous
+    # visual context. Higher = fewer video tokens = lower API cost. Applies to the
+    # Gemini backend's video sender loop.
+    VIDEO_FRAME_INTERVAL_S = _env_float("VIDEO_FRAME_INTERVAL_S", default=10.0)
+
     logger.debug(f"Custom Profile: {REACHY_MINI_CUSTOM_PROFILE}")
 
     def __init__(self) -> None:
@@ -534,6 +539,7 @@ def refresh_runtime_config_from_env() -> None:
     config.REACHY_MINI_CUSTOM_PROFILE = LOCKED_PROFILE or os.getenv("REACHY_MINI_CUSTOM_PROFILE")
     config.IDLE_INTERVAL_S = _env_float("IDLE_INTERVAL_S", default=60.0)
     config.CLEAR_SESSION_AFTER_S = _env_nonneg_float("CLEAR_SESSION_AFTER_S", default=200.0)
+    config.VIDEO_FRAME_INTERVAL_S = _env_float("VIDEO_FRAME_INTERVAL_S", default=10.0)
 
 
 def get_backend_choice(model_name: str | None = None) -> str:
