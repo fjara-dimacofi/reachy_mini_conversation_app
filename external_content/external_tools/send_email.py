@@ -1,7 +1,8 @@
 """External tool: send an email via SMTP.
 
 Lets Reachy compose and send an email on the user's behalf (e.g. a reminder,
-a summary of the conversation, a note to a colleague).
+a summary of the conversation, a note to a colleague). Reachy can also take a
+picture with its camera and attach it to the email (set `attach_photo` true).
 
 Configuration is read from environment variables so no secrets live in code:
 
@@ -36,6 +37,7 @@ from email.utils import formataddr
 from pathlib import Path
 from typing import Any, Dict
 
+from reachy_mini_conversation_app.camera_frame_encoding import encode_bgr_frame_as_jpeg
 from reachy_mini_conversation_app.tools.core_tools import Tool, ToolDependencies
 
 
@@ -93,6 +95,7 @@ def _send_email_blocking(
     recipient: str,
     subject: str,
     body: str,
+    image_bytes: bytes | None = None,
 ) -> None:
     """Build and send the message synchronously (run via asyncio.to_thread)."""
     msg = EmailMessage()
@@ -101,6 +104,11 @@ def _send_email_blocking(
     msg["To"] = recipient
     msg["Subject"] = subject
     msg.set_content(body)
+
+    if image_bytes:
+        msg.add_attachment(
+            image_bytes, maintype="image", subtype="jpeg", filename="photo.jpg"
+        )
 
     if use_ssl:
         context = ssl.create_default_context()
@@ -146,6 +154,14 @@ class SendEmail(Tool):
                 "type": "string",
                 "description": "Plain-text body content of the email.",
             },
+            "attach_photo": {
+                "type": "boolean",
+                "description": (
+                    "If true, take a picture with the camera right now and "
+                    "attach it to the email. Use this when the user asks to "
+                    "send a photo, picture, or what Reachy is currently seeing."
+                ),
+            },
         },
         "required": ["subject", "body"],
     }
@@ -160,6 +176,7 @@ class SendEmail(Tool):
         subject = (kwargs.get("subject") or "").strip()
         body = kwargs.get("body") or ""
         recipient = (kwargs.get("to") or os.environ.get("EMAIL_DEFAULT_TO") or "").strip()
+        attach_photo = bool(kwargs.get("attach_photo"))
 
         # Append a sign-off so every email closes consistently. Override with the
         # EMAIL_SIGNATURE env var; set it to an empty string to disable. A literal
@@ -197,11 +214,22 @@ class SendEmail(Tool):
         if not subject:
             return {"error": "Subject is required."}
 
+        # Optionally grab the latest camera frame and attach it as a JPEG.
+        image_bytes: bytes | None = None
+        if attach_photo:
+            if deps.camera_worker is None:
+                return {"error": "Cannot attach photo: camera is not available."}
+            frame = deps.camera_worker.get_latest_frame()
+            if frame is None:
+                return {"error": "Cannot attach photo: no camera frame available."}
+            image_bytes = encode_bgr_frame_as_jpeg(frame)
+
         logger.info(
-            "Tool call: send_email to=%s subject=%r (%d chars body)",
+            "Tool call: send_email to=%s subject=%r (%d chars body, photo=%s)",
             recipient,
             subject,
             len(body),
+            attach_photo,
         )
 
         try:
@@ -217,6 +245,7 @@ class SendEmail(Tool):
                 recipient=recipient,
                 subject=subject,
                 body=body,
+                image_bytes=image_bytes,
             )
         except smtplib.SMTPAuthenticationError:
             logger.exception("send_email authentication failed")
@@ -225,4 +254,9 @@ class SendEmail(Tool):
             logger.exception("send_email failed")
             return {"error": f"Failed to send email: {exc}"}
 
-        return {"status": "sent", "to": recipient, "subject": subject}
+        return {
+            "status": "sent",
+            "to": recipient,
+            "subject": subject,
+            "photo_attached": bool(image_bytes),
+        }

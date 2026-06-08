@@ -17,7 +17,29 @@
         <div class="pill">Headless control</div>
         <h1>Reachy Mini Conversation</h1>
         <p class="subtitle">Choose a realtime backend, add credentials only when needed, and tweak personalities without the full UI.</p>
+        <div class="simple-mode-row">
+          <label class="switch" for="simple-mode-toggle">
+            <input type="checkbox" id="simple-mode-toggle" checked />
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Simple mode</span>
+          </label>
+        </div>
       </header>
+
+      <div id="simple-actions-panel" class="panel hidden">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Simple mode</p>
+            <h2>Quick controls</h2>
+          </div>
+          <span class="chip">Live</span>
+        </div>
+        <div class="simple-actions-grid">
+          <button id="simple-mic-btn" class="ghost">Disable microphone</button>
+          <button id="simple-reset-btn">Reset</button>
+        </div>
+        <p id="simple-actions-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </div>
 
       <aside class="privacy-notice" role="note" aria-label="Privacy notice">
         <p>
@@ -231,7 +253,7 @@
           </div>
         </div>
 
-        <div class="section">
+        <div id="personality-advanced" class="section">
           <div class="section-heading">
             <h3>Create / edit</h3>
             <p class="muted small">Adjust instructions, tools, and voice, then save your profile.</p>

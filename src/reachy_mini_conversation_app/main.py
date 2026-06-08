@@ -166,9 +166,11 @@ def run(
     )
     current_file_path = os.path.dirname(os.path.abspath(__file__))
     logger.debug(f"Current file absolute path: {current_file_path}")
+    simple_mode_default = True
     chatbot = gr.Chatbot(
         type="messages",
         resizable=True,
+        visible=not simple_mode_default,
         avatar_images=(
             os.path.join(current_file_path, "images", "user_avatar.png"),
             os.path.join(current_file_path, "images", "reachymini_avatar.png"),
@@ -234,8 +236,10 @@ def run(
 
         personality_ui = PersonalityUI()
         personality_ui.create_components()
+        simple_mode_default = personality_ui.SIMPLE_MODE_DEFAULT
         additional_inputs: list[Any] = [chatbot, *personality_ui.additional_inputs_ordered()]
 
+        api_key_textbox = None
         if config.BACKEND_PROVIDER in {OPENAI_BACKEND, GEMINI_BACKEND}:
             uses_gemini_backend = is_gemini_model()
             api_key_textbox = gr.Textbox(
@@ -244,6 +248,7 @@ def run(
                 value=(os.getenv("GEMINI_API_KEY") if uses_gemini_backend else os.getenv("OPENAI_API_KEY"))
                 if not get_space()
                 else "",
+                visible=not simple_mode_default,
             )
             additional_inputs.insert(1, api_key_textbox)
 
@@ -262,7 +267,10 @@ def run(
         else:
             app = settings_app
 
-        personality_ui.wire_events(handler, stream_manager)
+        extra_simple_hide = [chatbot]
+        if api_key_textbox is not None:
+            extra_simple_hide.append(api_key_textbox)
+        personality_ui.wire_events(handler, stream_manager, extra_simple_hide=extra_simple_hide)
 
         app = gr.mount_gradio_app(app, stream.ui, path="/")
     else:

@@ -22,6 +22,8 @@ from reachy_mini_conversation_app.config import (
 class PersonalityUI:
     """Container for personality-related Gradio components."""
 
+    SIMPLE_MODE_DEFAULT = True
+
     def __init__(self) -> None:
         """Initialize the PersonalityUI instance."""
         # Constants and paths
@@ -31,6 +33,7 @@ class PersonalityUI:
         self._prompts_dir = Path(__file__).parent / "prompts"
 
         # Components (initialized in create_components)
+        self.simple_mode_toggle: gr.Checkbox
         self.personalities_dropdown: gr.Dropdown
         self.apply_btn: gr.Button
         self.status_md: gr.Markdown
@@ -144,40 +147,72 @@ class PersonalityUI:
         initial_available_tools = sorted(set(shared_tools + local_tools))
         initial_enabled_tools = self._parse_enabled_tools(initial_tools_txt)
 
+        self.simple_mode_toggle = gr.Checkbox(
+            label="Simple mode (hide advanced controls)",
+            value=self.SIMPLE_MODE_DEFAULT,
+        )
         self.personalities_dropdown = gr.Dropdown(
             label=dropdown_label,
             choices=dropdown_choices,
             value=current_value,
             interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
         )
         self.apply_btn = gr.Button("Apply personality", interactive=not is_locked)
-        self.status_md = gr.Markdown(visible=True)
-        self.preview_md = gr.Markdown(value=self._read_instructions_for(current_value))
-        self.person_name_tb = gr.Textbox(label="Personality name", interactive=not is_locked)
-        self.person_instr_ta = gr.TextArea(label="Personality instructions", lines=10, interactive=not is_locked)
+        self.status_md = gr.Markdown(visible=not self.SIMPLE_MODE_DEFAULT)
+        self.preview_md = gr.Markdown(
+            value=self._read_instructions_for(current_value),
+            visible=not self.SIMPLE_MODE_DEFAULT,
+        )
+        self.person_name_tb = gr.Textbox(
+            label="Personality name",
+            interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
+        )
+        self.person_instr_ta = gr.TextArea(
+            label="Personality instructions",
+            lines=10,
+            interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
+        )
         self.tools_txt_ta = gr.TextArea(
             label="tools.txt",
             value=initial_tools_txt,
             lines=10,
             interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
         )
         self.voice_dropdown = gr.Dropdown(
             label="Voice",
             choices=get_available_voices_for_backend(),
             value=get_default_voice_for_backend(),
             interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
         )
-        self.new_personality_btn = gr.Button("New personality", interactive=not is_locked)
+        self.new_personality_btn = gr.Button(
+            "New personality",
+            interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
+        )
         self.available_tools_cg = gr.CheckboxGroup(
             label="Available tools (helper)",
             choices=initial_available_tools,
             value=initial_enabled_tools,
             interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
         )
-        self.save_btn = gr.Button("Save personality (instructions + tools)", interactive=not is_locked)
+        self.save_btn = gr.Button(
+            "Save personality (instructions + tools)",
+            interactive=not is_locked,
+            visible=not self.SIMPLE_MODE_DEFAULT,
+        )
 
     def additional_inputs_ordered(self) -> list[Any]:
-        """Return the additional inputs in the expected order for Stream."""
+        """Return the additional inputs in the expected order for Stream.
+
+        The simple-mode toggle is appended last so it does not shift the
+        positional indices the handlers rely on (notably args[3], the API key).
+        """
         return [
             self.personalities_dropdown,
             self.apply_btn,
@@ -190,11 +225,22 @@ class PersonalityUI:
             self.voice_dropdown,
             self.available_tools_cg,
             self.save_btn,
+            self.simple_mode_toggle,
         ]
 
     # ---------- Event wiring ----------
-    def wire_events(self, handler: Any, blocks: gr.Blocks) -> None:
-        """Attach event handlers to components within a Blocks context."""
+    def wire_events(
+        self,
+        handler: Any,
+        blocks: gr.Blocks,
+        extra_simple_hide: list[Any] | None = None,
+    ) -> None:
+        """Attach event handlers to components within a Blocks context.
+
+        ``extra_simple_hide`` is a list of components created outside this class
+        (e.g. the chatbot and API-key textbox in main.py) that should also be
+        hidden when simple mode is enabled.
+        """
 
         async def _apply_personality(selected: str) -> tuple[str, str]:
             if LOCKED_PROFILE is not None and selected != LOCKED_PROFILE:
@@ -306,7 +352,39 @@ class PersonalityUI:
             out = ("\n".join(comments) + ("\n" if comments else "") + body).strip() + "\n"
             return gr.update(value=out)
 
+        # Components hidden when simple mode is on. Everything except the apply
+        # button (and the fastrtc-owned listening control) collapses away; the
+        # personalities dropdown stays mounted-but-hidden so its value is still
+        # available to Apply, which re-applies the current profile / restarts.
+        simple_hidden = [
+            self.personalities_dropdown,
+            self.new_personality_btn,
+            self.status_md,
+            self.preview_md,
+            self.person_name_tb,
+            self.person_instr_ta,
+            self.tools_txt_ta,
+            self.voice_dropdown,
+            self.available_tools_cg,
+            self.save_btn,
+            *(extra_simple_hide or []),
+        ]
+
+        def _toggle_simple_mode(simple: bool) -> list[dict[str, Any]]:
+            return [gr.update(visible=not simple) for _ in simple_hidden]
+
         with blocks:
+            self.simple_mode_toggle.change(
+                fn=_toggle_simple_mode,
+                inputs=[self.simple_mode_toggle],
+                outputs=simple_hidden,
+            )
+            blocks.load(
+                fn=_toggle_simple_mode,
+                inputs=[self.simple_mode_toggle],
+                outputs=simple_hidden,
+            )
+
             self.apply_btn.click(
                 fn=_apply_personality,
                 inputs=[self.personalities_dropdown],

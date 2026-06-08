@@ -4,6 +4,8 @@ const HF_BACKEND = "huggingface";
 const DEFAULT_BACKEND = HF_BACKEND;
 const HF_DEFAULT_HOST = "localhost";
 const HF_DEFAULT_PORT = 8765;
+const SIMPLE_MODE_STORAGE_KEY = "reachy-mini-simple-mode";
+const SIMPLE_MODE_DEFAULT = true;
 const BACKEND_META = {
   [OPENAI_BACKEND]: {
     label: "OpenAI Realtime",
@@ -346,6 +348,22 @@ function show(el, flag) {
   el.classList.toggle("hidden", !flag);
 }
 
+function loadSimpleModePreference() {
+  try {
+    const raw = window.localStorage.getItem(SIMPLE_MODE_STORAGE_KEY);
+    if (raw === null) return SIMPLE_MODE_DEFAULT;
+    return raw !== "false";
+  } catch (e) {
+    return SIMPLE_MODE_DEFAULT;
+  }
+}
+
+function saveSimpleModePreference(enabled) {
+  try {
+    window.localStorage.setItem(SIMPLE_MODE_STORAGE_KEY, enabled ? "true" : "false");
+  } catch (e) {}
+}
+
 function setStatusMessage(el, text, tone = "") {
   el.textContent = text;
   el.className = tone ? `status ${tone}` : "status";
@@ -400,16 +418,22 @@ async function init() {
   const connectionAlertTitle = document.getElementById("connection-alert-title");
   const connectionAlertCopy = document.getElementById("connection-alert-copy");
   const backendSaveBtn = document.getElementById("save-backend-btn");
+  const backendPanel = document.getElementById("backend-panel");
   const backendInputs = Array.from(document.querySelectorAll('input[name="backend"]'));
   const backendCards = Array.from(document.querySelectorAll("[data-backend-card]"));
   const statusEl = document.getElementById("status");
   const formPanel = document.getElementById("form-panel");
   const configuredPanel = document.getElementById("configured");
+  const simpleActionsPanel = document.getElementById("simple-actions-panel");
+  const simpleMicBtn = document.getElementById("simple-mic-btn");
+  const simpleResetBtn = document.getElementById("simple-reset-btn");
+  const simpleActionsStatus = document.getElementById("simple-actions-status");
   const configuredTitle = document.getElementById("configured-title");
   const configuredCopy = document.getElementById("configured-copy");
   const configuredChip = document.getElementById("configured-chip");
   const personalityPanel = document.getElementById("personality-panel");
   const sayPanel = document.getElementById("say-panel");
+  const simpleModeToggle = document.getElementById("simple-mode-toggle");
   const sayText = document.getElementById("say-text");
   const saySend = document.getElementById("say-send");
   const sayStatus = document.getElementById("say-status");
@@ -448,6 +472,8 @@ async function init() {
   const pModel = document.getElementById("model-select");
   const pApplyModel = document.getElementById("apply-model");
   const pAvail = document.getElementById("tools-available");
+  const personalityAdvanced = document.getElementById("personality-advanced");
+  const privacyNotice = document.querySelector(".privacy-notice");
 
   const AUTO_WITH = {
     dance: ["stop_dance"],
@@ -455,6 +481,34 @@ async function init() {
   };
   let selectedBackend = DEFAULT_BACKEND;
   let editingCredentials = false;
+  let simpleMode = loadSimpleModePreference();
+  let personalityUiReady = false;
+  let st = null;
+
+  function renderSimpleMicButton(enabled) {
+    simpleMicBtn.textContent = enabled ? "Disable microphone" : "Enable microphone";
+  }
+
+  function applySimpleMode() {
+    if (simpleModeToggle) simpleModeToggle.checked = simpleMode;
+    show(simpleActionsPanel, simpleMode);
+    if (simpleMode) {
+      show(backendPanel, false);
+      show(configuredPanel, false);
+      show(formPanel, false);
+      show(personalityPanel, false);
+      show(sayPanel, false);
+      show(personalityAdvanced, false);
+      if (privacyNotice) show(privacyNotice, false);
+      return;
+    }
+
+    if (privacyNotice) show(privacyNotice, true);
+    if (st) renderCredentialPanels(st);
+    show(personalityPanel, personalityUiReady);
+    show(sayPanel, personalityUiReady);
+    show(personalityAdvanced, personalityUiReady);
+  }
 
   function resolveHFHost() {
     return hfHostPreset.value === "custom" ? hfHostCustom.value.trim() : HF_DEFAULT_HOST;
@@ -624,7 +678,7 @@ async function init() {
   show(configuredPanel, false);
   show(personalityPanel, false);
 
-  let st = (await waitForStatus()) || {
+  st = (await waitForStatus()) || {
     active_backend: DEFAULT_BACKEND,
     backend_provider: DEFAULT_BACKEND,
     backend_connected: false,
@@ -649,12 +703,16 @@ async function init() {
   setSelectedBackend(st.backend_provider || DEFAULT_BACKEND);
   statusEl.textContent = "";
   renderCredentialPanels(st);
+  renderSimpleMicButton(!!st.listening_enabled);
+  applySimpleMode();
 
   window.setInterval(async () => {
     const latest = await fetchStatusSnapshot();
     if (!latest) return;
     st = latest;
     renderCredentialPanels(st);
+    renderSimpleMicButton(!!st.listening_enabled);
+    applySimpleMode();
   }, 3000);
 
   // Handler for "Change API key" button
@@ -663,6 +721,7 @@ async function init() {
     input.value = "";
     setStatusMessage(statusEl, "");
     renderCredentialPanels(st);
+    applySimpleMode();
   });
 
   // Remove error styling when user starts typing
@@ -964,8 +1023,17 @@ async function init() {
     if (!voices.length) {
       setStatusMessage(pStatus, "Voices unavailable. The backend default voice will be used.", "warn");
     }
+    personalityUiReady = true;
     show(personalityPanel, true);
-    show(sayPanel, true);
+    applySimpleMode();
+
+    if (simpleModeToggle) {
+      simpleModeToggle.addEventListener("change", () => {
+        simpleMode = !!simpleModeToggle.checked;
+        saveSimpleModePreference(simpleMode);
+        applySimpleMode();
+      });
+    }
 
     async function submitSayText() {
       const text = (sayText.value || "").trim();
@@ -1006,6 +1074,7 @@ async function init() {
       listeningLabel.textContent = enabled
         ? "On — Reachy responds to speech"
         : "Off — Reachy ignores the microphone";
+      renderSimpleMicButton(enabled);
     }
     // Reflect the backend's current state on load.
     if (st.listening_enabled !== undefined) {
@@ -1017,7 +1086,8 @@ async function init() {
       renderListeningLabel(enabled);
       listeningToggle.disabled = true;
       try {
-        await setListening(enabled);
+        const res = await setListening(enabled);
+        st.listening_enabled = !!res.listening_enabled;
         setStatusMessage(sayStatus, enabled ? "Active listening on." : "Active listening off.", "ok");
       } catch (e) {
         // Revert the UI if the request failed.
@@ -1026,6 +1096,50 @@ async function init() {
         setStatusMessage(sayStatus, `Failed to update listening${e.message ? ": " + e.message : ""}`, "error");
       } finally {
         listeningToggle.disabled = false;
+      }
+    });
+
+    simpleMicBtn.addEventListener("click", async () => {
+      const enabled = !(st?.listening_enabled ?? listeningToggle.checked);
+      simpleMicBtn.disabled = true;
+      setStatusMessage(simpleActionsStatus, enabled ? "Enabling microphone..." : "Disabling microphone...");
+      try {
+        const res = await setListening(enabled);
+        st.listening_enabled = !!res.listening_enabled;
+        listeningToggle.checked = !!res.listening_enabled;
+        renderListeningLabel(!!res.listening_enabled);
+        setStatusMessage(
+          simpleActionsStatus,
+          res.listening_enabled ? "Microphone enabled." : "Microphone disabled.",
+          "ok",
+        );
+      } catch (e) {
+        setStatusMessage(
+          simpleActionsStatus,
+          `Failed to update microphone${e.message ? ": " + e.message : ""}`,
+          "error",
+        );
+      } finally {
+        simpleMicBtn.disabled = false;
+      }
+    });
+
+    simpleResetBtn.addEventListener("click", async () => {
+      simpleResetBtn.disabled = true;
+      setStatusMessage(simpleActionsStatus, "Resetting...");
+      try {
+        const res = await applyPersonality(pSelect.value);
+        currentVoice = await getCurrentVoice();
+        if (res.startup) setStartupLabel(res.startup);
+        setStatusMessage(simpleActionsStatus, res.status || "Reset complete.", "ok");
+      } catch (e) {
+        setStatusMessage(
+          simpleActionsStatus,
+          `Failed to reset${e.message ? ": " + e.message : ""}`,
+          "error",
+        );
+      } finally {
+        simpleResetBtn.disabled = false;
       }
     });
 
