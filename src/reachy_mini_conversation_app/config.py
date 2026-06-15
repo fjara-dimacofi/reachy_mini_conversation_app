@@ -222,22 +222,6 @@ def _env_float(name: str, default: float) -> float:
     return value
 
 
-def _env_nonneg_float(name: str, default: float) -> float:
-    """Parse a non-negative float env variable (0 allowed, e.g. to disable a feature)."""
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    try:
-        value = float(raw)
-    except ValueError:
-        logger.warning("Invalid float value for %s=%r, using default=%s", name, raw, default)
-        return default
-    if value < 0:
-        logger.warning("%s must be >= 0, got %r; using default=%s", name, raw, default)
-        return default
-    return value
-
-
 def _normalize_hf_connection_mode(value: str | None) -> str | None:
     """Normalize the Hugging Face connection mode, if explicitly configured."""
     candidate = (value or "").strip().lower()
@@ -440,11 +424,6 @@ class Config:
     # (talk/emotion/dance). Higher = less frequent unprompted behavior.
     IDLE_INTERVAL_S = _env_float("IDLE_INTERVAL_S", default=60.0)
 
-    # Seconds with no human speech before the conversation session is cleared
-    # (fresh session, context wiped) to avoid drift in very long sessions.
-    # Set to 0 to disable. Applies to the Gemini backend.
-    CLEAR_SESSION_AFTER_S = _env_nonneg_float("CLEAR_SESSION_AFTER_S", default=200.0)
-
     # Seconds between camera frames streamed to the Gemini Live API for continuous
     # visual context. Higher = fewer video tokens = lower API cost. Applies to the
     # Gemini backend's video sender loop.
@@ -538,7 +517,6 @@ def refresh_runtime_config_from_env() -> None:
     config.HF_TOKEN = os.getenv("HF_TOKEN")
     config.REACHY_MINI_CUSTOM_PROFILE = LOCKED_PROFILE or os.getenv("REACHY_MINI_CUSTOM_PROFILE")
     config.IDLE_INTERVAL_S = _env_float("IDLE_INTERVAL_S", default=60.0)
-    config.CLEAR_SESSION_AFTER_S = _env_nonneg_float("CLEAR_SESSION_AFTER_S", default=200.0)
     config.VIDEO_FRAME_INTERVAL_S = _env_float("VIDEO_FRAME_INTERVAL_S", default=10.0)
 
 
