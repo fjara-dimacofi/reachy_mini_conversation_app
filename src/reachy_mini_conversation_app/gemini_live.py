@@ -617,12 +617,27 @@ class GeminiLiveHandler(ConversationHandler):
 
                 # session.receive() yields responses for the current turn then completes.
                 # We loop so the session stays alive across multiple conversation turns.
+                last_response_monotonic = time.monotonic()
                 while not self._stop_event.is_set():
                     try:
                         async for response in session.receive():
                             if self._stop_event.is_set():
                                 logger.info("Stop event set, breaking receive loop")
                                 break
+
+                            # Diagnostic: the session can stay connected but go silent
+                            # for tens of seconds. Log unusually long gaps between
+                            # responses so mid-session stalls are visible in the logs.
+                            now_monotonic = time.monotonic()
+                            response_gap = now_monotonic - last_response_monotonic
+                            last_response_monotonic = now_monotonic
+                            if response_gap > 10.0:
+                                logger.warning(
+                                    "Gemini response gap of %.1fs (server_content=%s tool_call=%s)",
+                                    response_gap,
+                                    bool(response.server_content),
+                                    bool(response.tool_call),
+                                )
 
                             # Handle server content (audio, transcription, interruption)
                             if response.server_content:
