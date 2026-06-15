@@ -122,9 +122,12 @@ class CameraWorker:
                             # The tracker returns normalized coordinates in [-1, 1]
                             h, w, _ = frame.shape
                             eye_center_norm = (eye_center + 1) / 2
+                            # The tracker can return values slightly outside [-1, 1],
+                            # so clamp to the frame bounds before handing pixels to
+                            # look_at_image, which rejects out-of-range coordinates.
                             eye_center_pixels = [
-                                eye_center_norm[0] * w,
-                                eye_center_norm[1] * h,
+                                float(np.clip(eye_center_norm[0] * w, 0.0, w)),
+                                float(np.clip(eye_center_norm[1] * h, 0.0, h)),
                             ]
 
                             target_pose = self.reachy_mini.look_at_image(
