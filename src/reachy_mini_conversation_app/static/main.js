@@ -369,6 +369,24 @@ async function applyIdleInterval(seconds) {
   return await resp.json();
 }
 
+async function getCalendarStatus() {
+  const url = new URL("/calendar/auth/status", window.location.origin);
+  url.searchParams.set("_", Date.now().toString());
+  const resp = await fetchWithTimeout(url, {}, 5000);
+  if (!resp.ok) throw new Error("calendar_status_failed");
+  return await resp.json();
+}
+
+async function startCalendarAuth() {
+  const url = new URL("/calendar/auth/start", window.location.origin);
+  const resp = await fetchWithTimeout(url, { method: "POST" }, 8000);
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || data.ok === false) {
+    throw new Error(data.error || "calendar_start_failed");
+  }
+  return data;
+}
+
 function show(el, flag) {
   el.classList.toggle("hidden", !flag);
 }
@@ -457,6 +475,7 @@ async function init() {
   const configuredCopy = document.getElementById("configured-copy");
   const configuredChip = document.getElementById("configured-chip");
   const personalityPanel = document.getElementById("personality-panel");
+  const behaviorPanel = document.getElementById("behavior-panel");
   const sayPanel = document.getElementById("say-panel");
   const simpleModeToggle = document.getElementById("simple-mode-toggle");
   const sayText = document.getElementById("say-text");
@@ -498,6 +517,10 @@ async function init() {
   const pApplyModel = document.getElementById("apply-model");
   const pIdleInterval = document.getElementById("idle-interval");
   const pApplyIdleInterval = document.getElementById("apply-idle-interval");
+  const idleStatus = document.getElementById("idle-status");
+  const calendarConnectBtn = document.getElementById("calendar-connect");
+  const calendarStatus = document.getElementById("calendar-status");
+  const calendarChip = document.getElementById("calendar-chip");
   const pAvail = document.getElementById("tools-available");
   const personalityAdvanced = document.getElementById("personality-advanced");
   const privacyNotice = document.querySelector(".privacy-notice");
@@ -525,6 +548,7 @@ async function init() {
       show(formPanel, false);
       show(personalityPanel, false);
       show(sayPanel, false);
+      show(behaviorPanel, false);
       show(personalityAdvanced, false);
       if (privacyNotice) show(privacyNotice, false);
       return;
@@ -534,6 +558,7 @@ async function init() {
     if (st) renderCredentialPanels(st);
     show(personalityPanel, personalityUiReady);
     show(sayPanel, personalityUiReady);
+    show(behaviorPanel, personalityUiReady);
     show(personalityAdvanced, personalityUiReady);
   }
 
@@ -976,6 +1001,50 @@ async function init() {
     }
     setStartupLabel(startupChoice);
 
+    // Google Calendar connection state.
+    let calendarPollTimer = null;
+    function applyCalendarState(state) {
+      const connected = state === "connected";
+      if (calendarChip) {
+        calendarChip.textContent = connected ? "Connected" : "Not connected";
+        calendarChip.classList.toggle("chip-ok", connected);
+      }
+      if (calendarConnectBtn) {
+        calendarConnectBtn.textContent = connected
+          ? "Reconnect Google Calendar"
+          : "Connect Google Calendar";
+      }
+    }
+    async function refreshCalendarStatus() {
+      try {
+        const s = await getCalendarStatus();
+        applyCalendarState(s.state);
+        return s;
+      } catch {
+        return null;
+      }
+    }
+    function pollCalendarUntilDone() {
+      if (calendarPollTimer) clearInterval(calendarPollTimer);
+      let elapsed = 0;
+      calendarPollTimer = setInterval(async () => {
+        elapsed += 2;
+        const s = await refreshCalendarStatus();
+        if (!s) return;
+        if (s.state === "connected") {
+          clearInterval(calendarPollTimer);
+          setStatusMessage(calendarStatus, "Google Calendar connected.", "ok");
+        } else if (s.state === "error") {
+          clearInterval(calendarPollTimer);
+          setStatusMessage(calendarStatus, `Authorization failed${s.error ? ": " + s.error : ""}`, "error");
+        } else if (elapsed >= 300) {
+          clearInterval(calendarPollTimer);
+          setStatusMessage(calendarStatus, "Authorization timed out. Try again.", "warn");
+        }
+      }, 2000);
+    }
+    await refreshCalendarStatus();
+
     function renderToolCheckboxes(available, enabled) {
       pAvail.innerHTML = "";
       const enabledSet = new Set(enabled);
@@ -1206,19 +1275,45 @@ async function init() {
     if (pApplyIdleInterval) {
       pApplyIdleInterval.addEventListener("click", async () => {
         const seconds = Number(pIdleInterval && pIdleInterval.value);
-        if (!Number.isFinite(seconds) || seconds <= 0) {
-          setStatusMessage(pStatus, "Enter a positive idle interval in seconds.", "error");
+        if (!Number.isFinite(seconds) || seconds < 0) {
+          setStatusMessage(idleStatus, "Enter 0 (disabled) or a positive number of seconds.", "error");
           return;
         }
-        setStatusMessage(pStatus, "Applying idle interval...");
+        setStatusMessage(idleStatus, "Applying idle interval...");
         try {
           const res = await applyIdleInterval(seconds);
           if (typeof res.idle_interval_s === "number") {
             pIdleInterval.value = String(res.idle_interval_s);
           }
-          setStatusMessage(pStatus, res.status || `Idle interval set to ${seconds}s.`, "ok");
+          const msg =
+            res.status || (seconds === 0 ? "Idle behavior disabled." : `Idle interval set to ${seconds}s.`);
+          setStatusMessage(idleStatus, msg, "ok");
         } catch (e) {
-          setStatusMessage(pStatus, `Failed to apply idle interval${e.message ? ": " + e.message : ""}`, "error");
+          setStatusMessage(idleStatus, `Failed to apply idle interval${e.message ? ": " + e.message : ""}`, "error");
+        }
+      });
+    }
+
+    if (calendarConnectBtn) {
+      calendarConnectBtn.addEventListener("click", async () => {
+        setStatusMessage(calendarStatus, "Starting authorization...");
+        try {
+          const res = await startCalendarAuth();
+          if (res.state === "connected") {
+            applyCalendarState("connected");
+            setStatusMessage(calendarStatus, "Google Calendar already connected.", "ok");
+            return;
+          }
+          if (res.url) {
+            window.open(res.url, "_blank", "noopener");
+            setStatusMessage(calendarStatus, "Approve access in the new tab, then return here.");
+            pollCalendarUntilDone();
+          }
+        } catch (e) {
+          const msg = e.message === "GOOGLE_OAUTH_CLIENT_FILE is not set." || /client/i.test(e.message || "")
+            ? "OAuth client not configured. Set GOOGLE_OAUTH_CLIENT_FILE and restart."
+            : `Failed to start authorization${e.message ? ": " + e.message : ""}`;
+          setStatusMessage(calendarStatus, msg, "error");
         }
       });
     }

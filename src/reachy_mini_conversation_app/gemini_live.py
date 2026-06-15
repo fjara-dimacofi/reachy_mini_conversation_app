@@ -750,7 +750,11 @@ class GeminiLiveHandler(ConversationHandler):
 
         # Handle idle
         idle_duration = now - self.last_activity_time
-        if idle_duration > config.IDLE_INTERVAL_S and self.deps.movement_manager.is_idle():
+        if (
+            config.IDLE_INTERVAL_S > 0
+            and idle_duration > config.IDLE_INTERVAL_S
+            and self.deps.movement_manager.is_idle()
+        ):
             try:
                 await self.send_idle_signal(idle_duration)
             except Exception as e:

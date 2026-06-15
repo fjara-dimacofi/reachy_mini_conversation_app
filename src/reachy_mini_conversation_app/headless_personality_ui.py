@@ -35,6 +35,51 @@ from .headless_personality import (
 
 logger = logging.getLogger(__name__)
 
+# Single shared auth flow so a consent started in one request can be polled by
+# the next. Lazily created so importing this module never requires the Google
+# OAuth deps unless the calendar feature is actually used.
+_calendar_auth = None
+
+
+def mount_calendar_routes(app: FastAPI) -> None:
+    """Register Google Calendar OAuth endpoints on a FastAPI app.
+
+    Routes:
+      GET  /calendar/auth/status  -> {state, client_configured, error}
+      POST /calendar/auth/start   -> {ok, url} (loopback consent URL to open)
+    """
+    try:
+        from fastapi.responses import JSONResponse
+    except Exception:  # pragma: no cover - only when settings app not available
+        return
+
+    def _auth():
+        global _calendar_auth
+        if _calendar_auth is None:
+            from .google_calendar_auth import CalendarAuth
+
+            _calendar_auth = CalendarAuth()
+        return _calendar_auth
+
+    @app.get("/calendar/auth/status")
+    def _calendar_status() -> dict:  # type: ignore
+        try:
+            return _auth().status()
+        except Exception as e:
+            return {"state": "error", "error": str(e), "client_configured": False}
+
+    @app.post("/calendar/auth/start")
+    def _calendar_start() -> dict:  # type: ignore
+        try:
+            auth = _auth()
+            if auth.has_valid_credentials():
+                return {"ok": True, "url": "", "state": "connected"}
+            url = auth.start_background()
+            return {"ok": True, "url": url, "state": "pending"}
+        except Exception as e:
+            logger.warning("Calendar auth start failed: %s", e)
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=400)  # type: ignore
+
 
 def mount_personality_routes(
     app: FastAPI,
@@ -386,6 +431,8 @@ def mount_personality_routes(
         except Exception as e:
             return JSONResponse({"ok": False, "error": str(e)}, status_code=500)  # type: ignore
 
+    mount_calendar_routes(app)
+
     @app.get("/settings/idle_interval")
     def _get_idle_interval() -> dict:  # type: ignore
         """Return the current idle-interval (seconds) before idle behaviors fire."""
@@ -412,10 +459,14 @@ def mount_personality_routes(
                     value = None
         if value is None:
             return JSONResponse({"ok": False, "error": "missing_idle_interval_s"}, status_code=400)  # type: ignore
-        if value <= 0 or value > 3600:
+        # 0 disables idle behavior; negatives and absurdly large values are rejected.
+        if value < 0 or value > 3600:
             return JSONResponse({"ok": False, "error": "out_of_range"}, status_code=400)  # type: ignore
         try:
             config.IDLE_INTERVAL_S = value
+            if value == 0:
+                logger.info("Idle behavior disabled via UI")
+                return {"ok": True, "idle_interval_s": value, "status": "Idle behavior disabled."}
             logger.info("Idle interval set to %.1fs via UI", value)
             return {"ok": True, "idle_interval_s": value, "status": f"Idle interval set to {value:g}s."}
         except Exception as e:

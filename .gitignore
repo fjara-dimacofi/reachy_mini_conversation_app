@@ -68,3 +68,8 @@ src/reachy_mini_conversation_app/profiles/user_personalities/
 external_content/installed_tool_spaces.json
 external_content/external_profiles/*
 external_content/external_tools/*
+
+# Google OAuth / service-account secrets and tokens
+*google_calendar_token.json
+client_secret*.json
+curiosity-*.json

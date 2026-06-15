@@ -27,6 +27,11 @@ dependencies = [
     #Gemini
     "google-genai>=1.0.0",
 
+    #Google Calendar
+    "google-api-python-client>=2.0.0",
+    "google-auth>=2.0.0",
+    "google-auth-oauthlib>=1.0.0",
+
     #Reachy mini
     "reachy_mini_dances_library",
     "reachy_mini_toolbox",

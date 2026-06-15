@@ -224,6 +224,38 @@
         <p id="say-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
 
+      <div id="behavior-panel" class="panel hidden">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Behavior</p>
+            <h2>Idle behavior</h2>
+          </div>
+          <span class="chip">Live</span>
+        </div>
+        <p class="muted">How long Reachy waits without activity before triggering idle actions. Set to 0 to disable idle behavior entirely.</p>
+        <div class="row row-idle">
+          <label for="idle-interval">Idle interval (s)</label>
+          <input id="idle-interval" type="number" min="0" max="3600" step="1" />
+          <button id="apply-idle-interval" class="ghost">Apply</button>
+        </div>
+        <p id="idle-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </div>
+
+      <div id="calendar-panel" class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Integrations</p>
+            <h2>Google Calendar</h2>
+          </div>
+          <span id="calendar-chip" class="chip">Not connected</span>
+        </div>
+        <p class="muted">Authorize Reachy to read and manage your Google Calendar. You'll approve access once in your browser; the token is stored locally and refreshed automatically.</p>
+        <div class="row">
+          <button id="calendar-connect" class="ghost">Connect Google Calendar</button>
+        </div>
+        <p id="calendar-status" class="status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </div>
+
       <div id="personality-panel" class="panel hidden">
         <div class="panel-heading">
           <div>
@@ -271,11 +303,6 @@
             <label for="voice-select">Voice</label>
             <select id="voice-select"></select>
             <button id="apply-voice" class="ghost">Apply voice</button>
-          </div>
-          <div class="row row-idle">
-            <label for="idle-interval">Idle interval (s)</label>
-            <input id="idle-interval" type="number" min="1" max="3600" step="1" />
-            <button id="apply-idle-interval" class="ghost">Apply</button>
           </div>
           <div class="row">
             <label for="instructions-ta">Instructions</label>
