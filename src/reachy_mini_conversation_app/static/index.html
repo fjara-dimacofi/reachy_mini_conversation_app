@@ -272,6 +272,11 @@
             <select id="voice-select"></select>
             <button id="apply-voice" class="ghost">Apply voice</button>
           </div>
+          <div class="row row-idle">
+            <label for="idle-interval">Idle interval (s)</label>
+            <input id="idle-interval" type="number" min="1" max="3600" step="1" />
+            <button id="apply-idle-interval" class="ghost">Apply</button>
+          </div>
           <div class="row">
             <label for="instructions-ta">Instructions</label>
             <textarea id="instructions-ta" rows="8" placeholder="# Write your instructions here"></textarea>

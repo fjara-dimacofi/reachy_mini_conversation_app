@@ -344,6 +344,31 @@ async function applyModel(model) {
   return await resp.json();
 }
 
+async function getIdleInterval() {
+  try {
+    const url = new URL("/settings/idle_interval", window.location.origin);
+    url.searchParams.set("_", Date.now().toString());
+    const resp = await fetchWithTimeout(url, {}, 3000);
+    if (!resp.ok) throw new Error("idle_interval_failed");
+    const data = await resp.json();
+    return typeof data.idle_interval_s === "number" ? data.idle_interval_s : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function applyIdleInterval(seconds) {
+  const url = new URL("/settings/idle_interval", window.location.origin);
+  url.searchParams.set("idle_interval_s", String(seconds));
+  url.searchParams.set("_", Date.now().toString());
+  const resp = await fetchWithTimeout(url, { method: "POST" }, 8000);
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error(data.error || "apply_idle_interval_failed");
+  }
+  return await resp.json();
+}
+
 function show(el, flag) {
   el.classList.toggle("hidden", !flag);
 }
@@ -471,6 +496,8 @@ async function init() {
   const pModelRow = document.getElementById("model-row");
   const pModel = document.getElementById("model-select");
   const pApplyModel = document.getElementById("apply-model");
+  const pIdleInterval = document.getElementById("idle-interval");
+  const pApplyIdleInterval = document.getElementById("apply-idle-interval");
   const pAvail = document.getElementById("tools-available");
   const personalityAdvanced = document.getElementById("personality-advanced");
   const privacyNotice = document.querySelector(".privacy-notice");
@@ -942,6 +969,11 @@ async function init() {
     } else {
       show(pModelRow, false);
     }
+    // Idle interval: seconds of silence before idle behaviors trigger.
+    const idleInterval = await getIdleInterval();
+    if (pIdleInterval && idleInterval !== null) {
+      pIdleInterval.value = String(idleInterval);
+    }
     setStartupLabel(startupChoice);
 
     function renderToolCheckboxes(available, enabled) {
@@ -1170,6 +1202,26 @@ async function init() {
         setStatusMessage(pStatus, `Failed to apply model${e.message ? ": " + e.message : ""}`, "error");
       }
     });
+
+    if (pApplyIdleInterval) {
+      pApplyIdleInterval.addEventListener("click", async () => {
+        const seconds = Number(pIdleInterval && pIdleInterval.value);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+          setStatusMessage(pStatus, "Enter a positive idle interval in seconds.", "error");
+          return;
+        }
+        setStatusMessage(pStatus, "Applying idle interval...");
+        try {
+          const res = await applyIdleInterval(seconds);
+          if (typeof res.idle_interval_s === "number") {
+            pIdleInterval.value = String(res.idle_interval_s);
+          }
+          setStatusMessage(pStatus, res.status || `Idle interval set to ${seconds}s.`, "ok");
+        } catch (e) {
+          setStatusMessage(pStatus, `Failed to apply idle interval${e.message ? ": " + e.message : ""}`, "error");
+        }
+      });
+    }
 
     pApply.addEventListener("click", async () => {
       setStatusMessage(pStatus, "Applying...");

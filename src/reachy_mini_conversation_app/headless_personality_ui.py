@@ -386,6 +386,41 @@ def mount_personality_routes(
         except Exception as e:
             return JSONResponse({"ok": False, "error": str(e)}, status_code=500)  # type: ignore
 
+    @app.get("/settings/idle_interval")
+    def _get_idle_interval() -> dict:  # type: ignore
+        """Return the current idle-interval (seconds) before idle behaviors fire."""
+        try:
+            return {"idle_interval_s": float(config.IDLE_INTERVAL_S)}
+        except Exception:
+            return {"idle_interval_s": 60.0}
+
+    @app.post("/settings/idle_interval")
+    async def _apply_idle_interval(
+        request: Request,
+        idle_interval_s: float | None = Query(None),
+    ) -> dict:  # type: ignore
+        value: float | None = idle_interval_s
+        if value is None:
+            try:
+                raw = await request.json()
+            except Exception:
+                raw = {}
+            if isinstance(raw, dict) and raw.get("idle_interval_s") is not None:
+                try:
+                    value = float(raw.get("idle_interval_s"))
+                except (TypeError, ValueError):
+                    value = None
+        if value is None:
+            return JSONResponse({"ok": False, "error": "missing_idle_interval_s"}, status_code=400)  # type: ignore
+        if value <= 0 or value > 3600:
+            return JSONResponse({"ok": False, "error": "out_of_range"}, status_code=400)  # type: ignore
+        try:
+            config.IDLE_INTERVAL_S = value
+            logger.info("Idle interval set to %.1fs via UI", value)
+            return {"ok": True, "idle_interval_s": value, "status": f"Idle interval set to {value:g}s."}
+        except Exception as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=500)  # type: ignore
+
     @app.post("/voices/apply")
     async def _apply_voice(request: Request, voice: str | None = Query(None)) -> dict:  # type: ignore
         voice = str(voice or "")
