@@ -373,6 +373,31 @@ button.ghost {
   border: 1px solid var(--border);
 }
 button.ghost:hover { border-color: rgba(94, 240, 193, 0.4); }
+
+/* Microphone toggle: state shown by color + status dot, not just text. */
+button.mic-toggle { gap: 8px; }
+button.mic-toggle .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+button.mic-on {
+  border-color: rgba(94, 240, 193, 0.55);
+  background: rgba(94, 240, 193, 0.10);
+}
+button.mic-on .dot {
+  background: #5ef0c1;
+  box-shadow: 0 0 8px rgba(94, 240, 193, 0.9);
+}
+button.mic-off {
+  border-color: rgba(255, 107, 107, 0.6);
+  background: rgba(255, 107, 107, 0.10);
+}
+button.mic-off .dot {
+  background: #ff6b6b;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.9);
+}
 .actions {
   display: flex;
   align-items: center;

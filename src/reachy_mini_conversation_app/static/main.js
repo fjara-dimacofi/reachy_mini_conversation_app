@@ -536,7 +536,18 @@ async function init() {
   let st = null;
 
   function renderSimpleMicButton(enabled) {
-    simpleMicBtn.textContent = enabled ? "Disable microphone" : "Enable microphone";
+    simpleMicBtn.classList.add("mic-toggle");
+    simpleMicBtn.classList.toggle("mic-on", enabled);
+    simpleMicBtn.classList.toggle("mic-off", !enabled);
+    // Label the current state (not the action) so it's clear what's happening;
+    // the action lives in the tooltip and aria-label.
+    simpleMicBtn.innerHTML =
+      `<span class="dot" aria-hidden="true"></span>` +
+      (enabled ? "Microphone ON" : "Microphone OFF");
+    simpleMicBtn.setAttribute("aria-pressed", String(enabled));
+    const action = enabled ? "Tap to mute the microphone" : "Tap to enable the microphone";
+    simpleMicBtn.title = action;
+    simpleMicBtn.setAttribute("aria-label", `${enabled ? "Microphone on" : "Microphone off"}. ${action}`);
   }
 
   function applySimpleMode() {
