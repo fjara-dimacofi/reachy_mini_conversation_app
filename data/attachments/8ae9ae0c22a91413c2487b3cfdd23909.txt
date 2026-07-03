@@ -1,0 +1,1 @@
+WARNING  reachy_mini_conversation_app.config:config.py:97 Ignoring obsolete backend environment variable(s): BACKEND_PROVIDER, MODEL_NAME. This app now uses the Hugging Face backend only.

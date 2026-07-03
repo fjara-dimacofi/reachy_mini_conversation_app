@@ -1,0 +1,1413 @@
+{
+  "stats": {
+    "total": 231,
+    "new": 231,
+    "passed": 231
+  },
+  "status": "passed",
+  "newTests": [
+    {
+      "id": "21d0e853743ed6ba68a9fc5fe7ff80ad",
+      "name": "test_apply_audio_startup_config_uses_sdk_audio_config_api",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "e700edc66f8a0d2477e1289106309b98",
+      "name": "test_resolve_emotion_name_accepts_ids_intents_and_yes_no_phrases[yes_understanding-understanding2]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "829d0daa5acfd2981b7a776b9955cdd1",
+      "name": "test_camera_tool_reports_error_when_camera_disabled",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "31994cab189a24202a2eff22bb8a1137",
+      "name": "test_personality_routes_return_hf_voices",
+      "status": "passed",
+      "duration": 13
+    },
+    {
+      "id": "7a1bad82adf0a30974589982b5b92068",
+      "name": "test_project_file_paths_stay_within_windows_budget",
+      "status": "passed",
+      "duration": 13
+    },
+    {
+      "id": "e5e990d33e3ac96e192f7ac97559a0a4",
+      "name": "test_hf_connection_selection_uses_explicit_mode_for_target[local-None-ws://127.0.0.1:8765/v1/realtime-local-True]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "aab937c30ee54626df6493dec8c6f8f4",
+      "name": "test_session_instructions_fall_back_to_default_for_incomplete_profile",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "cff0190a6c51adc956a1e453703c1f61",
+      "name": "test_tool_cancellation",
+      "status": "passed",
+      "duration": 71
+    },
+    {
+      "id": "0a62abc24655cedb7d27af3175d601f2",
+      "name": "test_random_curated_emotion_falls_back_when_no_curated_moves",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "45b07486cb6ca96da32977ff9ab5e296",
+      "name": "test_clear_audio_queue_prefers_clear_player",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "12242aa7322d8e569733c0a905faba53",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[lost1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "4094a98063e685e0386ecbe79ef401aa",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[curious]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "578d757616aa80eb6318bf65be661e83",
+      "name": "test_backend_startup_failure_is_recorded_without_raising",
+      "status": "passed",
+      "duration": 1016
+    },
+    {
+      "id": "45e9deebcee3f7693c1eb1ba0f4d1ce0",
+      "name": "test_resolve_emotion_name_accepts_ids_intents_and_yes_no_phrases[no_sad1-no_sad1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "8a2815241b98cf8f403969990055248f",
+      "name": "test_personality_routes_load_builtin_default_tools",
+      "status": "passed",
+      "duration": 10
+    },
+    {
+      "id": "9563a2b11cf91e87b346c40dd6a181cd",
+      "name": "test_tool_spaces_remove_disables_tools_in_profile",
+      "status": "passed",
+      "duration": 16
+    },
+    {
+      "id": "418516e4ebc0d808514881465076f02f",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[no_excited-poor_options5]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "0edd26b559c72b6237336483ea652ec8",
+      "name": "test_wake_up_if_sleeping_runs_wake_up_from_sleep_head_pose",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "fa4cdc752e4c617998b6193ab31827ae",
+      "name": "test_status_reports_backend_connection_failure",
+      "status": "passed",
+      "duration": 13
+    },
+    {
+      "id": "1bf2c757c9fa03b26a44d9ef87cff450",
+      "name": "test_go_to_sleep_returns_unavailable_without_runtime_callback",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "7ada461850bc95c94370414020d8e2a8",
+      "name": "test_settings_ui_detaches_framework_catch_all_before_api_routes",
+      "status": "passed",
+      "duration": 25
+    },
+    {
+      "id": "dbd6ee3672cf72ae2c08f8f60482bd5c",
+      "name": "test_status_reports_direct_hf_ws_url_as_ready",
+      "status": "passed",
+      "duration": 15
+    },
+    {
+      "id": "e0efd03edcac0a2c67405a6f8ecd3976",
+      "name": "test_local_stream_persist_personality_clears_legacy_startup_env_overrides",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "f2df58941c870fe5534e444dfa842d5f",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[lost]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "5eed4b0cf85aca205547fc39b12fe863",
+      "name": "test_local_stream_change_voice_delegates_without_backend_restart",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "3f4d67cb811ab7912d6e51d04e8719c1",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[no_sad-poor_options6]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "257f336cf10f705a2244c2f221ac6905",
+      "name": "test_resolve_tool_space_omits_auth_header_for_public_space",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "bfb03c8dc52563f913b66f00c9316347",
+      "name": "test_wake_up_if_sleeping_skips_non_sleep_head_pose",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "90c53043e95529a5994af81fdfbbb653",
+      "name": "test_set_loop_explicit",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "8c3320e430508b35ec1b4b741683477f",
+      "name": "test_resolve_app_timeout_minutes[-1-None]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "68f93f25476af8cb989ef19c92617588",
+      "name": "test_external_tools_fail_on_duplicate_tool_names",
+      "status": "passed",
+      "duration": 7
+    },
+    {
+      "id": "0670290b246847f09cf0392df84becf1",
+      "name": "test_remote_tool_spec_translates_to_function_spec",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "e5be18114f2fa55ba5a6d8517f020be0",
+      "name": "test_handler_uses_hf_startup_voice_at_startup",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "6c6a97bfcabef268d00eba0d6f74c1ae",
+      "name": "test_backend_config_switches_to_saved_local_hf_connection_without_payload_target",
+      "status": "passed",
+      "duration": 14
+    },
+    {
+      "id": "1cc4308a8ed9b5e17aa96d18974c9ac3",
+      "name": "test_backend_config_persists_local_hf_selection_and_status",
+      "status": "passed",
+      "duration": 15
+    },
+    {
+      "id": "ba1b71462fcb867d289c7e12b02057fc",
+      "name": "test_bounds",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "8eebf9f17c996c1b9226e0f953bca237",
+      "name": "test_settings_api_uses_versioned_routes_only",
+      "status": "passed",
+      "duration": 27
+    },
+    {
+      "id": "5ba1954cc4c9b24bc723adae6211fb1f",
+      "name": "test_resolve_emotion_name_does_not_accept_bad_exact_moves[oops1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "da6877ed4109af563062f4b61aa2faf2",
+      "name": "test_route_deletes_inactive_profile",
+      "status": "passed",
+      "duration": 10
+    },
+    {
+      "id": "7c445581e4606a56934e6091060d83ff",
+      "name": "test_apply_personality_uses_selected_voice_for_lb_allocated_sessions",
+      "status": "passed",
+      "duration": 3
+    },
+    {
+      "id": "fe4d2343ca185402496098d368b8ada1",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[tired1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "f418221e18ae31e0eedfae6e8a4ba43d",
+      "name": "test_play_emotion_queues_random_for_unknown_emotion",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "50487d64d6c2eb706dd641cdfb52523d",
+      "name": "test_choose_idle_tool_call_uses_registered_name_for_matching_class",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "b84afe455964e8ec48eeea59b734b291",
+      "name": "test_clear_audio_queue_falls_back_to_output_buffer",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "d4bf3c6af773d68a33aa3bc4460cceb1",
+      "name": "test_resolve_emotion_name_does_not_accept_bad_exact_moves[cheerful1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "bb539a38ffc6c80c87e775e2ec715877",
+      "name": "test_remote_tool_error_result_maps_to_app_payload",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "b8ba256811a19783bd6cde03c9aad40e",
+      "name": "test_external_profile_can_use_builtin_tools",
+      "status": "passed",
+      "duration": 3
+    },
+    {
+      "id": "047e8e90733bf6f9769d7f306d36ea0e",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[proud3]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "9fef4f6197b2b8ebd3f25c15dd1311ed",
+      "name": "test_explicit_default_profile_does_not_fall_back_to_itself",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "ae2dab8865402e4ece025c9ba15bb2ba",
+      "name": "test_backend_config_requests_in_process_restart_with_handler_factory",
+      "status": "passed",
+      "duration": 15
+    },
+    {
+      "id": "1b1f7a5b464c616f101e2d214fe7929b",
+      "name": "test_build_realtime_client_deployed_allocates_with_hf_token_only[None-None-DUMMY]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "0f29d42076ca57ab873f70007205b61e",
+      "name": "test_handler_normalizes_hf_voice_case",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "0f21ce399082aabd76fe8ada2cfa44d5",
+      "name": "test_default_session_instructions_load_from_default_profile",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "08167177c6438299dedcc2390c5ca1ba",
+      "name": "test_headless_profile_write_can_store_greeting",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "c31876ab5f17ccc675c5a0f0f905ec1c",
+      "name": "test_tool_spaces_add_rejects_alias_collision",
+      "status": "passed",
+      "duration": 4
+    },
+    {
+      "id": "ed5a376254b8859fded09450887e5c4a",
+      "name": "test_prompts_load_from_compact_builtin_profile",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "e5ce9c56b66e11987476c20feb7ad045",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[contempt1]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "f0464e05600794bbddd996020002ece3",
+      "name": "test_timeout_cancels_old_tools",
+      "status": "passed",
+      "duration": 102
+    },
+    {
+      "id": "d6b69de2bdb5cd5045b94ea61c420e4b",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[excited-poor_options0]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "e7efaf17b8ee363aa9fb95477407b42c",
+      "name": "test_memory_tools_use_instance_storage",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "8c9c76cb3012f8233e7ab806333f42fd",
+      "name": "test_tool_failure",
+      "status": "passed",
+      "duration": 52
+    },
+    {
+      "id": "9ca1a8947e4fd64103d61656861eb2a5",
+      "name": "test_go_to_sleep_calls_runtime_callback",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "f02c3a9c5133da39010e2606f8f50d84",
+      "name": "test_hf_default_session_url_uses_stable_space_proxy",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "c2bb96c5a6c93fed4e1cdcaf6db13493",
+      "name": "test_resolve_tool_space_attaches_auth_header_for_private_space",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "7ebc65f291bbebf60a668b2dcb5ad9fa",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[welcoming1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "308a45a0ccc85ee286cd033745f2e88e",
+      "name": "test_audio_to_int16_scales_float32",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "4deaa5671d2b3baa7f5349c6ec0f2e22",
+      "name": "test_route_refuses_deleting_current_profile",
+      "status": "passed",
+      "duration": 10
+    },
+    {
+      "id": "c2cdb21355704c3b6f09ec2604efa6c9",
+      "name": "test_resolve_tool_space_prefers_app_config_hf_token",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "58a3e90112450a8250d6d5fd95129be8",
+      "name": "test_startup_loop_rebuilds_handler_on_restart_request",
+      "status": "passed",
+      "duration": 21
+    },
+    {
+      "id": "d711c95edfd43ce1ccf2e1c581f69139",
+      "name": "test_set_loop_uses_running_loop",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "4c2297e8164a7e2dc2f07ac1ea3b20c8",
+      "name": "test_validate_http_mcp_url_rejects_non_http_scheme",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "43bc1647150252dc28d7f7d3597c1449",
+      "name": "test_emit_skips_idle_signal_while_response_active",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "7137f0304ec736b217cdba07c27331d4",
+      "name": "test_session_greeting_prompt_loads_from_selected_profile",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "e633f7d7c5d2eca9d0eba410c973a977",
+      "name": "test_audio_to_float32_scales_int16",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "ffba7230232d3a6b528ca2118281312c",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[yes sad]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "75f2fff221b717d8303c22e489708989",
+      "name": "test_initialize_tools_loads_enabled_installed_remote_tools_and_dispatches",
+      "status": "passed",
+      "duration": 4
+    },
+    {
+      "id": "39cbe348ca9a0a28ea05a1391bb0ef59",
+      "name": "test_read_installed_tool_spaces_raises_on_alias_collision_in_manifest",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "c1a56f98a3cee675fce5255f9ff58c00",
+      "name": "test_hf_connection_selection_requires_mode",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "f1daed31ab1ee0561ce4876c789b8f01",
+      "name": "test_delete_refuses_builtin_profile",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "154a8351885f38ade8eee29adddf2550",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[inquiring1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "a7993068c6dac97870b46db8e32eeb85",
+      "name": "test_load_startup_settings_into_runtime_saved_settings_override_inherited_env",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "7741bf2605a8c577ab58cf7cdcb41fa5",
+      "name": "test_timeout_ignores_recent_tools",
+      "status": "passed",
+      "duration": 52
+    },
+    {
+      "id": "3ab45e5e3fb90809ac47d0f3ff8bca07",
+      "name": "test_build_realtime_client_deployed_allocates_with_hf_token_only[hf-secret-expected_header0-hf-secret]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "3d7bac7e34a518ac1df08af7644b660b",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[yes_sad]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "a8a86fb742d518b9211ea5d3c471bd7e",
+      "name": "test_refresh_runtime_config_reloads_hf_runtime_fields",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "8ef1718902925a17602add915c254b6d",
+      "name": "test_play_emotion_schema_uses_compact_intents",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "7dcfcd90abdea9cec98d8c716bfcdc38",
+      "name": "test_apply_audio_startup_config_returns_false_when_sdk_returns_false",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "8af57f336debdf2de221e3d5c2e170bf",
+      "name": "test_get_all_tools_sorted",
+      "status": "passed",
+      "duration": 72
+    },
+    {
+      "id": "0e2ff8c3eb60e2d07eb62a6c6143d06e",
+      "name": "test_startup_multiple_callbacks",
+      "status": "passed",
+      "duration": 103
+    },
+    {
+      "id": "3de98aa2679d46d87754e8816c740466",
+      "name": "test_notifications_queued_on_failure",
+      "status": "passed",
+      "duration": 52
+    },
+    {
+      "id": "efc4324fa967c99c0205deb51588e8ce",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[yes_understanding-poor_options8]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "276830836b6d1c1e1951cbfd465f9de3",
+      "name": "test_choose_idle_tool_call_rejects_same_name_with_unmatched_class",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "94e26746390b98727e4b2e6d23e99bf9",
+      "name": "test_clear_audio_queue_drains_queue_in_place",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "461da4cb2a57bd1bb086262cfb4c9b24",
+      "name": "test_packaged_profiles_win_outside_source_checkout",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "8ab88460cff87b7d6f26b50d6b83c425",
+      "name": "test_prompt_includes_memory_fragment",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "db2237aa5c6f7ac5a81633befab2c11f",
+      "name": "test_local_stream_launch_waits_for_missing_hf_target_without_starting_media",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "241978772232be162f2d5ab4cdf15790",
+      "name": "test_personality_routes_apply_voice_accepts_query_param",
+      "status": "passed",
+      "duration": 9
+    },
+    {
+      "id": "d420ee1d756b7f51e34994a9dd035c51",
+      "name": "test_huggingface_session_uses_configured_transcription_language",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "5244051af537c37b118634397eb9eccc",
+      "name": "test_start_with_progress",
+      "status": "passed",
+      "duration": 152
+    },
+    {
+      "id": "b528170fd342deddaf7a842c5336a660",
+      "name": "test_build_realtime_client_uses_direct_hf_ws_url",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "4f4eda6208dc49fe42922f90e618a358",
+      "name": "test_tool_spaces_add_installs_private_space_with_token",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "b9e611e5853c18fd75434e4e3b4e91b6",
+      "name": "test_resolve_emotion_name_returns_none_for_random_or_unknown",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "7b62ef3cfbb52cff7a8266061fb088f4",
+      "name": "test_tool_spaces_manifest_uses_instance_path_when_provided",
+      "status": "passed",
+      "duration": 4
+    },
+    {
+      "id": "a17e9ff7dc68ed9453c114a78127ea51",
+      "name": "test_config_raises_on_external_profile_name_collision",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "5148631ab82e18c49f22079da8c5d9c4",
+      "name": "test_tool_id",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "257cc07526a84c9b65e0c3a6b3227f8d",
+      "name": "test_run_realtime_session_uses_default_voice_for_lb_allocated_sessions",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "ee87b41cec5287c30a0fc8b8dfcf4f37",
+      "name": "test_resolve_app_timeout_minutes[45-45.0]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "7e7afbc55eef4541635731c0377f9c29",
+      "name": "test_hf_connection_selection_uses_explicit_mode_for_target[deployed-None-ws://127.0.0.1:8765/v1/realtime-deployed-False]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "83a3e049e378103c1a1dfd692a6d93e3",
+      "name": "test_resolve_app_timeout_minutes[0-None]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "12d7c7561f496caf7f1e4f0c3115c806",
+      "name": "test_conversation_events_survive_handler_rebuild",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "3c47c4133dff3a3f9818a3d12eca1679",
+      "name": "test_wheel_file_paths_stay_within_windows_budget",
+      "status": "passed",
+      "duration": 839
+    },
+    {
+      "id": "fc98066261e197785fbb3a1829c841ef",
+      "name": "test_out_of_bounds_raises",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "6f32f002674010a44834d3e4cfd8fcd7",
+      "name": "test_handler_ignores_unsupported_hf_profile_voice",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "1b46ebeb94e6c1c55baa11db0e1fb5a3",
+      "name": "test_validate_http_mcp_url_rejects_non_local_plain_http",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "31c666dbf9d8b02f940bb221d08112db",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[proud]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "916a35eabfacdf206eded0a151b4416d",
+      "name": "test_bracketed_prompt_line_stays_plain_text",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "d2a803596def88ff4ba9cf69137d6909",
+      "name": "test_load_startup_settings_into_runtime_saved_settings_override_instance_env",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "03b4f6aa8d4297e86f4cce5b10ef3ad4",
+      "name": "test_play_emotion_queues_resolved_emotion",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "42cd889c2c8fd0b41936aec2824b755d",
+      "name": "test_session_voice_defaults_to_hf_voice",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "872879be1cce9c41c9d36706530c9aba",
+      "name": "test_resolve_emotion_name_does_not_accept_bad_exact_moves[oops2]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "502f0c226e59de492a76e28339862920",
+      "name": "test_user_profile_round_trips_through_instance_dir",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "98e914a62d1bbdcbf085ca15cb626500",
+      "name": "test_inactivity_timeout_thread_closes_stream_manager_without_sleep_callback",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "001fb2a9363c6c482a89673b5493a3f2",
+      "name": "test_run_realtime_session_passes_allocated_session_query",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "d2803120a4ef358a23e6b1f3486d15f3",
+      "name": "test_resolve_emotion_name_does_not_accept_bad_exact_moves[yes_sad1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "50097545668f6b608231b6e51664c4ac",
+      "name": "test_load_startup_settings_into_runtime_applies_profile_when_no_env",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "a4c91d59d163e3aefb84f48ee777ed89",
+      "name": "test_set_loop_creates_new_when_no_running",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "694a3dadd76e22540de493fe46be83a0",
+      "name": "test_resolve_emotion_name_does_not_accept_bad_exact_moves[reprimand3]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "928a33cfe02848f2e816eedf13c6439c",
+      "name": "test_hf_connection_selection_uses_explicit_mode_for_target[local-https://hf.example.test/session-None-local-False]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "f01f8db8af7c29c0166ae0970e070036",
+      "name": "test_start_registers_tool",
+      "status": "passed",
+      "duration": 52
+    },
+    {
+      "id": "4017dd103ee9b90878eabc673874a249",
+      "name": "test_cleanup_removes_old_completed",
+      "status": "passed",
+      "duration": 102
+    },
+    {
+      "id": "d2c1b25be9df6cdb293a88889733e884",
+      "name": "test_memory_store_adds_dedupes_caps_and_formats",
+      "status": "passed",
+      "duration": 71
+    },
+    {
+      "id": "95767ee1ceace3b650253a9b35a1f01a",
+      "name": "test_tool_spaces_add_private_space_without_token_hints_at_auth",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "b9d9905b91a712294baabef163272425",
+      "name": "test_inactivity_timeout_thread_goes_to_sleep",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "c3727f3b8c7a552dd35a2fbd96a29c6d",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[incomprehensible2]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "46c134fd414aefaa9cc76d0ae7cb564c",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[yes proud]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "21fe2e687baa7f9cf8c35dd0ece3e897",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[grateful-poor_options1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "c704335785228854fb5a23274dc9733e",
+      "name": "test_apply_audio_startup_config_returns_false_without_audio",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "27e7a7f0f344151f06edd57f01384fa4",
+      "name": "test_personality_routes_startup_choice_survives_runtime_profile_change",
+      "status": "passed",
+      "duration": 12
+    },
+    {
+      "id": "310d4f221a5873a7ca65ce3122d6184e",
+      "name": "test_apply_audio_startup_config_forwards_sdk_options",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "be3d0f8cae5a31bf462460d00a63e9c0",
+      "name": "test_apply_audio_startup_config_returns_false_without_sdk_api",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "6ccf77b8d72e1b4ce4782a5a5fb065ec",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[furious1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "29a50ac9a737dd91f87e52429007014a",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[yes_proud]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "592256b799663eeafbece644c27728f1",
+      "name": "test_cleanup_ignores_running",
+      "status": "passed",
+      "duration": 51
+    },
+    {
+      "id": "b202620409c315c0b2fd6c7e391dfad2",
+      "name": "test_tool_spaces_add_install_only_skips_tools_txt",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "d3e52561220d0ce4e8753ffaa33db09a",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[uncomfortable]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "0c60e11b99ee13f21f9b51f62760afcd",
+      "name": "test_tool_spaces_add_enables_in_active_profile_by_default",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "7b76f6eefba95c5e32efabcbafe6e582",
+      "name": "test_read_greeting_for_missing_file_returns_empty_for_ui",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "50c68a550e1a65ea094a495a8da42eef",
+      "name": "test_remote_mcp_tool_client_discovers_calls_and_handles_timeout",
+      "status": "passed",
+      "duration": 170
+    },
+    {
+      "id": "5e37fb5378ff7a440532195a42b26b6a",
+      "name": "test_load_startup_settings_into_runtime_preserves_inherited_env_without_saved_settings",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "a765a68ef9f0770d3099244581afdbe5",
+      "name": "test_tool_spaces_add_profile_flag_enables_in_specified_profile",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "f6813ab33b8cb6b53688b2d99448e802",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[inquiring]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "c08bcb1e2080140e7a11bc6e1596007f",
+      "name": "test_get_running_tools",
+      "status": "passed",
+      "duration": 102
+    },
+    {
+      "id": "13eefe6abae48b8915018259b5cb9730",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[uncomfortable1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "19dca8a3947afa795edb1318909da5c2",
+      "name": "test_initialize_tools_inherits_default_tools_txt_for_profile_without_local_tool_list",
+      "status": "passed",
+      "duration": 6
+    },
+    {
+      "id": "2a84976956451cd41f9e63f89dd8dc29",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[confused no]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "f43cea78eebb7be8f1f1fc3d2d0bd27e",
+      "name": "test_profile_name_resolves_directly_to_storage_dir",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "d3caf3cab345da3be1cc4619e235eede",
+      "name": "test_resolve_emotion_name_does_not_accept_bad_exact_moves[understanding1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "31b1e62bc265af27532d2902bbbb9985",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[uncertain-poor_options7]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "130171ce0069303a81e7f64e4302f348",
+      "name": "test_partial_transcription_uses_latest_snapshot",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "fe61eba54a1fd45c203abb593b6f444f",
+      "name": "test_get_notification",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "d8d0c821d1c2b26b100675bc1bdfd31b",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[impatient1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "e68b68b7ebc2c90af7d657cb67a16120",
+      "name": "test_route_refuses_deleting_startup_profile",
+      "status": "passed",
+      "duration": 11
+    },
+    {
+      "id": "96b1a64c398409a2a5dda93046a64f10",
+      "name": "test_headless_profile_write_defaults_voice_at_call_time",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "1e06282ea642bd5f925134a726ea6a21",
+      "name": "test_additional_outputs_stores_messages",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "e7d8fe521c397ae3fc371ae026748414",
+      "name": "test_local_stream_persist_personality_stores_voice_override",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "0ca58f0459562e741e704805e4bde0df",
+      "name": "test_forced_tool_registry_reload_does_not_duplicate_profile_local_tool",
+      "status": "passed",
+      "duration": 7
+    },
+    {
+      "id": "618201a13111dc2687b4a2b5bbff72be",
+      "name": "test_creation",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "9d59b6ec148299491f8dfaf3f7644259",
+      "name": "test_choose_idle_tool_call_keeps_args_with_weighted_candidate",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "7668b837e4aadf5fb64d0eade834e62d",
+      "name": "test_wait_for_item_returns_none_on_timeout",
+      "status": "passed",
+      "duration": 11
+    },
+    {
+      "id": "15c0bdc95958586b4dcd4b115433979f",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[happy-poor_options2]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "e196546e8d70f6ed0e376481bc58883b",
+      "name": "test_tool_spaces_add_list_remove_round_trip",
+      "status": "passed",
+      "duration": 14
+    },
+    {
+      "id": "a779b3205c6bd7d4dbfba93ad0d0a3b0",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[oops]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "d7096f6fa7e18b5636a37eacbb50b7aa",
+      "name": "test_personality_routes_persist_startup_with_voice_override",
+      "status": "passed",
+      "duration": 10
+    },
+    {
+      "id": "439f889ea03b213c199b201dcf599abd",
+      "name": "test_apply_audio_startup_config_returns_false_when_sdk_raises",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "183e695e0b983bdefdc6575f37954278",
+      "name": "test_config_raises_when_selected_external_profile_is_missing",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "d2bf2b0668b95022fa885d3cfd0e5444",
+      "name": "test_random_curated_emotion_uses_curated_pool",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "02fda80efd8e67e60c8bac8de271b6df",
+      "name": "test_session_greeting_prompt_uses_builtin_default_without_profile",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "bbe9ea9e0eeac8bc8d12521638d5e502",
+      "name": "test_change_voice_updates_live_hf_session_without_restart",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "ec2d123b66c52ac0a845e553d26ec73d",
+      "name": "test_update_progress_success",
+      "status": "passed",
+      "duration": 52
+    },
+    {
+      "id": "e6ee21c33e7037a80de87a7c396cb883",
+      "name": "test_hf_connection_selection_uses_explicit_mode_for_target[deployed-https://hf.example.test/session-ws://127.0.0.1:8765/v1/realtime-deployed-True]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "d3f94e8a94ee5e592ec1fc2da5b1dc7a",
+      "name": "test_headless_personality_routes_can_use_stream_callbacks",
+      "status": "passed",
+      "duration": 11
+    },
+    {
+      "id": "498d5e85e54a5e863f561f63a7f70016",
+      "name": "test_tool_registry_reloads_when_profile_changes",
+      "status": "passed",
+      "duration": 7
+    },
+    {
+      "id": "2a2742e6394cff99a9fa326a42c7dfbb",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[proud2]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "f9e916f7d90d7bd9a9af4a66e86adcc9",
+      "name": "test_startup_creates_tasks",
+      "status": "passed",
+      "duration": 102
+    },
+    {
+      "id": "eff88aa02ba21c1ee68c7e5d60d417e4",
+      "name": "test_build_namespaced_tool_name_normalizes_tool_segment",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "57bed0b2c10d0675fb1dd3b2c1e0011e",
+      "name": "test_successful_completion",
+      "status": "passed",
+      "duration": 51
+    },
+    {
+      "id": "c18489b777dfc0272e6a725fad871264",
+      "name": "test_resolve_emotion_name_accepts_ids_intents_and_yes_no_phrases[sad no-no_sad1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "b49d3227aa9aa6f5e6d9b8e2d41800bb",
+      "name": "test_builtin_profile_can_load_profile_local_tools",
+      "status": "passed",
+      "duration": 5
+    },
+    {
+      "id": "ddda2092d1e4e71d4ea6806b97a96979",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[lonely-poor_options3]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "441ae8c4fb7524af541a2e98ec3d16f7",
+      "name": "test_update_progress_unknown_tool",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "c8d13b990fe94f70ae8bbe6c470dffae",
+      "name": "test_stop_can_skip_neutral_reset",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "635ea28135b6fdd5a65fb70b2ac3c672",
+      "name": "test_resolve_emotion_name_does_not_use_weak_fallbacks[no-poor_options4]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "234dc01dab5b1801d15829bf2746600a",
+      "name": "test_apply_personality_propagates_restart_cancellation",
+      "status": "passed",
+      "duration": 5
+    },
+    {
+      "id": "6162b1ac5a43b879a52df363df29688c",
+      "name": "test_initialize_tools_warns_when_enabled_remote_tool_is_unavailable",
+      "status": "passed",
+      "duration": 4
+    },
+    {
+      "id": "d056c15938eb7856f1b38acb6ce7e31f",
+      "name": "test_backend_config_rejects_invalid_hf_port_zero",
+      "status": "passed",
+      "duration": 13
+    },
+    {
+      "id": "48a3d6e7d5f4ef176d74b4761ae8415b",
+      "name": "test_go_to_sleep_has_no_required_arguments",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "9d220226d0c7d66110330f3081991897",
+      "name": "test_resolve_app_timeout_minutes[-1440.0]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "ec589ed84b735d75c1042665c3540af2",
+      "name": "test_audio_converters_reject_unsupported_dtype",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "7d2dd71482ed2fecc3696293039f5610",
+      "name": "test_config_raises_on_external_tool_name_collision",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "89daa6aab1f5f491294d5ae8f4a87de5",
+      "name": "test_external_tools_can_be_loaded_without_external_profile",
+      "status": "passed",
+      "duration": 7
+    },
+    {
+      "id": "68ab27033aa3855f0bb3c782a9bc53bf",
+      "name": "test_resolve_emotion_name_does_not_accept_removed_substitute_intents[no_confused]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "04070866bf69edef124f1f0948f05bb0",
+      "name": "test_cancel_already_completed",
+      "status": "passed",
+      "duration": 51
+    },
+    {
+      "id": "8937d9444b0fca02af611aae0260cc80",
+      "name": "test_resolve_emotion_name_accepts_ids_intents_and_yes_no_phrases[no_excited-no_excited1]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "a7a2a4fb9089f8898d728fad1aba509c",
+      "name": "test_builtin_default_profile_tools_load_for_ui",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "ec497d04cb3fa7bb6726fbadd44f8533",
+      "name": "test_valid_progress",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "f141c65619c8545b6666db16a9080bc2",
+      "name": "test_get_tool",
+      "status": "passed",
+      "duration": 51
+    },
+    {
+      "id": "6d207f14e1b8c7a3e550dc41839a09dd",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[dance1]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "760e15b8a7acff7edc0e38634338a48f",
+      "name": "test_delete_refuses_path_outside_user_root",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "4a327ec3ab1ac2889bbe2aa1ea45c230",
+      "name": "test_personality_routes_mount_versioned_paths",
+      "status": "passed",
+      "duration": 21
+    },
+    {
+      "id": "e251e81e7cfc9668b3947ec8af0e1033",
+      "name": "test_route_returns_404_for_non_deletable",
+      "status": "passed",
+      "duration": 10
+    },
+    {
+      "id": "a2d384d61383959e7821a3f90174176d",
+      "name": "test_update_progress_clamps",
+      "status": "passed",
+      "duration": 52
+    },
+    {
+      "id": "133e3f32e12a0d5db66fb7ed3313786a",
+      "name": "test_update_progress_no_tracking",
+      "status": "passed",
+      "duration": 51
+    },
+    {
+      "id": "049f467a3c4bab8c9bee04110b2ed500",
+      "name": "test_memory_store_reads_mobile_json_shape_and_forgets_by_query",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "f24938296ff8158edc509b94fb9d5854",
+      "name": "test_write_and_read_startup_settings",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "2ac57dbcc5a4e6d2f324ca1101e21896",
+      "name": "test_notifications_queued_on_completion",
+      "status": "passed",
+      "duration": 52
+    },
+    {
+      "id": "82fda5a2efc5f6ccbc4c09d7133303be",
+      "name": "test_obsolete_backend_env_is_ignored_with_warning",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "9d17bdbfee4e4cd0f9a4c61c29ef80e1",
+      "name": "test_get_all_tools_limit",
+      "status": "passed",
+      "duration": 54
+    },
+    {
+      "id": "f34a453f8a49e604510f19b0ee144a74",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[curious1]",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "d6e82912f9c4aef9319b41a145fad953",
+      "name": "test_cancel_nonexistent",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "d9f7074196743fc943233c794e7e3fc1",
+      "name": "test_request_stop_current_app_posts_to_daemon",
+      "status": "passed",
+      "duration": 1
+    },
+    {
+      "id": "e12cb50dfeda33c98424ed7a5dda44d0",
+      "name": "test_cleanup_keeps_recent_completed",
+      "status": "passed",
+      "duration": 51
+    },
+    {
+      "id": "cff7b1ce50b5212da35c1f02613a6668",
+      "name": "test_delete_removes_user_profile",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "a3b082cea67f1c847a2a4b0a468ca8ca",
+      "name": "test_personality_routes_apply_same_profile_does_not_restart",
+      "status": "passed",
+      "duration": 9
+    },
+    {
+      "id": "e7ccd5e13739bd8ea2e974152a05cdff",
+      "name": "test_config_raises_on_external_profile_name_collision_with_builtin_alias",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "2cd0e4b9dfc3effdced1f543ebd972fe",
+      "name": "test_backend_config_persists_deployed_mode_without_clearing_local_hf_ws_url",
+      "status": "passed",
+      "duration": 14
+    },
+    {
+      "id": "daf68446cf579e64fb90cd2b94fe99ec",
+      "name": "test_camera_tool_preserves_frame_color_for_uploaded_jpeg",
+      "status": "passed",
+      "duration": 4
+    },
+    {
+      "id": "84a42ea8b67e57fe524e406294e6da7c",
+      "name": "test_resolve_emotion_name_does_not_accept_redundant_ambiguous_exact_moves[helpful2]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "62bb0a0d542f448bac61cf47bf6f0713",
+      "name": "test_run_go_to_sleep_tool_uses_runtime_callback",
+      "status": "passed",
+      "duration": 2
+    },
+    {
+      "id": "58b73c62748a02c5e01592d83d96ed6e",
+      "name": "test_mic_endpoints_report_and_toggle_mute_state",
+      "status": "passed",
+      "duration": 105
+    },
+    {
+      "id": "2b204904bd30aa6f6bc3e6b789661695",
+      "name": "test_resolve_app_timeout_minutes[soon-1440.0]",
+      "status": "passed",
+      "duration": 0
+    },
+    {
+      "id": "c65577a45b56af0f32decb831bb9f542",
+      "name": "test_headless_profile_write_skips_empty_greeting",
+      "status": "passed",
+      "duration": 0
+    }
+  ],
+  "flakyTests": [],
+  "retryTests": [],
+  "checks": [],
+  "name": "Conversation App Tests",
+  "duration": 4244,
+  "createdAt": 1783091031448,
+  "plugin": "Awesome",
+  "meta": {
+    "reportId": "c6b84f68-4caa-47d8-88e0-d57ebebb2405",
+    "singleFile": false,
+    "withTestResultsLinks": true
+  },
+  "pluginId": "awesome",
+  "pullRequestHref": "",
+  "jobHref": "https://github.com/fjara-dimacofi/reachy_mini_conversation_app/actions/runs/28668580684",
+  "href": "awesome/",
+  "coverage": 66
+}

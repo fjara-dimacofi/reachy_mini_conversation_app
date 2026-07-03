@@ -1,0 +1,1 @@
+{"id":"073fc2d52d545376fe10994da5b8d145","fullName":"tests.test_config_name_collisions#test_hf_connection_selection_uses_explicit_mode_for_target","name":"test_hf_connection_selection_uses_explicit_mode_for_target[local-None-ws://127.0.0.1:8765/v1/realtime-local-True]","status":"passed","testResultsByEnv":{"default":"e6ee21c33e7037a80de87a7c396cb883"}}
