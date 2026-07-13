@@ -4,7 +4,15 @@
  * Robot stays live, tapping the orb only mutes or unmutes the user's mic.
  */
 
-import { API_PREFIX, applyPersonality, getMicState, listPersonalities, setMicMuted } from "../api.js";
+import {
+  API_PREFIX,
+  applyPersonality,
+  describeError,
+  getMicState,
+  listPersonalities,
+  sendText,
+  setMicMuted,
+} from "../api.js";
 import { BUILT_IN_DEFAULT_OPTION, ORB_STATES } from "../constants.js";
 import { createOrb, mapActivityToState } from "../orb.js";
 import { consumePendingApply } from "../pending-apply.js";
@@ -45,11 +53,14 @@ export async function mountTalkView({ outlet, signal }) {
   orb.root.addEventListener("click", onMicTap);
   syncMicAria();
 
+  const composer = buildTextComposer();
+
   const view = h(
     "section",
     { class: "view view--talk" },
     h("div", { class: "talk__orb-wrap" }, orb.root),
-    caption
+    caption,
+    composer.element
   );
   outlet.replaceChildren(view);
 
@@ -181,6 +192,78 @@ export async function mountTalkView({ outlet, signal }) {
 
 function displayPersonalityName(name) {
   return name === BUILT_IN_DEFAULT_OPTION ? "Default" : prettifyProfileName(name);
+}
+
+/**
+ * Build the text composer: send a message to Reachy without speaking, optionally
+ * making it repeat the text back verbatim. Posts to the /say backend endpoint.
+ */
+function buildTextComposer() {
+  const input = h("textarea", {
+    class: "talk__composer-input",
+    rows: "2",
+    placeholder: "Type something for Reachy to say…",
+    "aria-label": "Message for Reachy",
+  });
+  const verbatim = h("input", { type: "checkbox", class: "talk__composer-checkbox" });
+  const sendBtn = h("button", { type: "submit", class: "btn btn--primary" }, "Send");
+  const status = h("p", { class: "talk__composer-status", role: "status", "aria-live": "polite" });
+
+  const element = h(
+    "form",
+    { class: "talk__composer" },
+    input,
+    h(
+      "div",
+      { class: "talk__composer-row" },
+      h(
+        "label",
+        { class: "talk__composer-mode" },
+        verbatim,
+        h("span", {}, "Say it back word for word")
+      ),
+      sendBtn
+    ),
+    status
+  );
+
+  function setStatus(message, isError = false) {
+    status.textContent = message;
+    status.classList.toggle("is-error", isError);
+  }
+
+  async function submit() {
+    const text = (input.value || "").trim();
+    if (!text) {
+      setStatus("Type a message first.", true);
+      return;
+    }
+    sendBtn.disabled = true;
+    setStatus("Sending…");
+    try {
+      await sendText(text, verbatim.checked);
+      input.value = "";
+      setStatus(verbatim.checked ? "Sent — Reachy will say it." : "Sent.");
+    } catch (error) {
+      setStatus(`Failed: ${describeError(error)}`, true);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  element.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submit();
+  });
+  // Enter sends; Shift+Enter inserts a newline.
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void submit();
+    }
+  });
+
+  return { element };
 }
 
 async function fetchPersonalityState() {

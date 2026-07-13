@@ -737,6 +737,60 @@ button {
   min-height: 1.4em;
 }
 
+.talk__composer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 440px;
+  margin-top: 8px;
+}
+
+.talk__composer-input {
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+.talk__composer-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-elev);
+}
+
+.talk__composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.talk__composer-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.talk__composer-status {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.talk__composer-status.is-error {
+  color: var(--danger);
+}
+
 /* 6. Settings view */
 
 .view--settings {

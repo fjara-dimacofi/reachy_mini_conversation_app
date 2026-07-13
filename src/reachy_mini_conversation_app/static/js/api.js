@@ -89,11 +89,16 @@ export const getCurrentModel = () => request("GET", `${API_PREFIX}/models/curren
 export const applyModel = (model) =>
   request("POST", `${API_PREFIX}/models/apply`, { body: { model } });
 
+export const sendText = (text, verbatim = false) =>
+  request("POST", `${API_PREFIX}/say`, { body: { text, verbatim } });
+
 /** Backend error codes that need friendlier copy than the raw code. */
 const ERROR_MESSAGES = Object.freeze({
   invalid_backend: "Unknown backend selected.",
   empty_key: "An API key is required for this backend.",
   missing_gemini_key: "A Gemini API key is required. Enter one to use the Gemini backend.",
+  missing_text: "Type a message first.",
+  text_input_unsupported_for_backend: "Text input isn't supported by the current backend.",
   empty_hf_host: "Enter a Hugging Face host.",
   invalid_hf_host: "That Hugging Face host doesn't look right.",
   invalid_hf_port: "That Hugging Face port doesn't look right.",
