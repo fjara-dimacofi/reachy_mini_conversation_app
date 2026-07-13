@@ -1,0 +1,456 @@
+/** Settings view: backend selection, Hugging Face connection, voice, and status. */
+
+import {
+  applyModel,
+  applyVoice,
+  describeError,
+  getCurrentModel,
+  getCurrentVoice,
+  getStatus,
+  listModels,
+  listVoices,
+  saveBackendConfig,
+  untilReady,
+} from "../api.js";
+import { h } from "../ui.js";
+
+const BACKENDS = Object.freeze({
+  HF: "huggingface",
+  GEMINI: "gemini",
+});
+
+const BACKEND_LABELS = Object.freeze({
+  [BACKENDS.HF]: "Hugging Face",
+  [BACKENDS.GEMINI]: "Gemini Live",
+});
+
+const HF_CONNECTION_MODES = Object.freeze({
+  DEPLOYED: "deployed",
+  LOCAL: "local",
+});
+
+const DEFAULT_HF_HOST = "localhost";
+const DEFAULT_HF_PORT = 8765;
+
+const HF_MODE_HINTS = Object.freeze({
+  [HF_CONNECTION_MODES.DEPLOYED]: "Uses the hosted Hugging Face backend. No API key required.",
+  [HF_CONNECTION_MODES.LOCAL]: "Connects directly to the host and port below.",
+});
+
+export async function mountSettingsView({ outlet, signal }) {
+  const backendSection = buildBackendSection({
+    onSaved: () => refreshStatus({ statusSection, connectionSection, backendSection, signal }),
+  });
+  const connectionSection = buildConnectionSection({
+    onSaved: () =>
+      Promise.all([
+        refreshStatus({ statusSection, connectionSection, backendSection, signal }),
+        refreshVoices({ voiceSection, signal }),
+      ]),
+  });
+  const voiceSection = buildVoiceSection();
+  const statusSection = buildStatusSection();
+
+  const view = h(
+    "section",
+    { class: "view view--settings" },
+    h(
+      "header",
+      { class: "view-header" },
+      h("h1", { class: "view-title" }, "Settings"),
+      h("p", { class: "view-subtitle" }, "Backend, connection, and voice for Reachy Mini.")
+    ),
+    backendSection.element,
+    connectionSection.element,
+    voiceSection.element,
+    statusSection.element
+  );
+  outlet.replaceChildren(view);
+
+  await Promise.all([
+    refreshStatus({ statusSection, connectionSection, backendSection, signal }),
+    refreshVoices({ voiceSection, signal }),
+  ]);
+}
+
+function buildBackendSection({ onSaved } = {}) {
+  const backendSelect = h(
+    "select",
+    { class: "settings-select", name: "backend" },
+    h("option", { value: BACKENDS.HF }, BACKEND_LABELS[BACKENDS.HF]),
+    h("option", { value: BACKENDS.GEMINI }, BACKEND_LABELS[BACKENDS.GEMINI])
+  );
+  const apiKeyInput = h("input", {
+    type: "password",
+    name: "gemini_api_key",
+    autocomplete: "off",
+    placeholder: "Gemini API key",
+    class: "settings-input",
+  });
+  const apiKeyField = h(
+    "label",
+    { class: "settings-field", "data-role": "gemini-key" },
+    h("span", { class: "settings-label" }, "Gemini API key"),
+    apiKeyInput
+  );
+  const modelSelect = h("select", { class: "settings-select", name: "model" });
+  const modelField = h(
+    "label",
+    { class: "settings-field", "data-role": "gemini-model" },
+    h("span", { class: "settings-label" }, "Model"),
+    modelSelect
+  );
+  const hint = h("p", { class: "settings-hint" }, "");
+  const status = h("p", { class: "settings-status", role: "status", "aria-live": "polite" });
+
+  const form = h(
+    "form",
+    { class: "settings-form" },
+    h(
+      "label",
+      { class: "settings-field" },
+      h("span", { class: "settings-label" }, "Realtime backend"),
+      backendSelect
+    ),
+    apiKeyField,
+    modelField,
+    hint,
+    h(
+      "div",
+      { class: "settings-actions" },
+      h("button", { type: "submit", class: "btn btn--primary" }, "Save backend")
+    ),
+    status
+  );
+
+  const element = h(
+    "section",
+    { class: "settings-section" },
+    h("h2", { class: "settings-section-title" }, "Backend"),
+    form
+  );
+
+  function syncBackendFields() {
+    const isGemini = backendSelect.value === BACKENDS.GEMINI;
+    apiKeyField.style.display = isGemini ? "" : "none";
+    modelField.style.display = isGemini ? "" : "none";
+    hint.textContent = isGemini
+      ? "Bring your own Gemini API key. Switching backends reconnects Reachy."
+      : "Uses the built-in Hugging Face backend. Configure its connection below.";
+  }
+
+  backendSelect.addEventListener("change", syncBackendFields);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    status.classList.remove("is-error");
+    status.textContent = "Saving…";
+    try {
+      const backend = backendSelect.value;
+      const payload = { backend };
+      if (backend === BACKENDS.GEMINI) {
+        const key = apiKeyInput.value.trim();
+        if (key) payload.api_key = key;
+      }
+      const result = await saveBackendConfig(payload);
+      if (backend === BACKENDS.GEMINI && modelSelect.value) {
+        try {
+          await applyModel(modelSelect.value);
+        } catch {
+          // Model application is best-effort; the backend still switched.
+        }
+      }
+      apiKeyInput.value = "";
+      status.textContent =
+        result?.message || (result?.requires_restart ? "Saved. Restart the app to apply." : "Saved.");
+      await onSaved?.();
+    } catch (error) {
+      status.textContent = `Failed to save: ${describeError(error)}`;
+      status.classList.add("is-error");
+    }
+  });
+
+  syncBackendFields();
+
+  return {
+    element,
+    async syncFromStatus(payload) {
+      if (payload?.backend && Object.values(BACKENDS).includes(payload.backend)) {
+        backendSelect.value = payload.backend;
+      }
+      syncBackendFields();
+      if (backendSelect.value !== BACKENDS.GEMINI) return;
+      try {
+        const models = await listModels();
+        let current = "";
+        try {
+          current = (await getCurrentModel())?.model || "";
+        } catch {
+          current = "";
+        }
+        modelSelect.replaceChildren();
+        for (const m of models) {
+          const opt = h("option", { value: m }, m);
+          if (m === current) opt.selected = true;
+          modelSelect.appendChild(opt);
+        }
+      } catch {
+        // Model list is best-effort; leave the selector empty on failure.
+      }
+    },
+  };
+}
+
+function buildConnectionSection({ onSaved } = {}) {
+  const hfModeSelect = h(
+    "select",
+    { class: "settings-select", name: "hf_mode" },
+    h("option", { value: HF_CONNECTION_MODES.DEPLOYED }, "Hosted"),
+    h("option", { value: HF_CONNECTION_MODES.LOCAL }, "Local")
+  );
+  const hfHostInput = h("input", {
+    type: "text",
+    name: "hf_host",
+    autocomplete: "off",
+    placeholder: DEFAULT_HF_HOST,
+    value: DEFAULT_HF_HOST,
+    class: "settings-input",
+  });
+  const hfPortInput = h("input", {
+    type: "number",
+    name: "hf_port",
+    min: "1",
+    max: "65535",
+    step: "1",
+    inputmode: "numeric",
+    value: String(DEFAULT_HF_PORT),
+    class: "settings-input",
+  });
+  const hfLocalFields = h(
+    "div",
+    { class: "settings-field-row", "data-role": "hf-local-fields" },
+    h(
+      "label",
+      { class: "settings-field" },
+      h("span", { class: "settings-label" }, "Host/IP"),
+      hfHostInput
+    ),
+    h(
+      "label",
+      { class: "settings-field" },
+      h("span", { class: "settings-label" }, "Port"),
+      hfPortInput
+    )
+  );
+  const hint = h("p", { class: "settings-hint" }, "");
+  const status = h("p", { class: "settings-status", role: "status", "aria-live": "polite" });
+
+  const form = h(
+    "form",
+    { class: "settings-form" },
+    h(
+      "label",
+      { class: "settings-field" },
+      h("span", { class: "settings-label" }, "Hugging Face connection"),
+      hfModeSelect
+    ),
+    hfLocalFields,
+    hint,
+    h(
+      "div",
+      { class: "settings-actions" },
+      h("button", { type: "submit", class: "btn btn--primary" }, "Save connection")
+    ),
+    status
+  );
+
+  const element = h(
+    "section",
+    { class: "settings-section" },
+    h("h2", { class: "settings-section-title" }, "Hugging Face connection"),
+    form
+  );
+
+  function syncLocalFields() {
+    const isLocal = hfModeSelect.value === HF_CONNECTION_MODES.LOCAL;
+    hfLocalFields.style.display = isLocal ? "" : "none";
+    hfHostInput.disabled = !isLocal;
+    hfPortInput.disabled = !isLocal;
+    hfHostInput.required = isLocal;
+    hfPortInput.required = isLocal;
+    hint.textContent = HF_MODE_HINTS[hfModeSelect.value] || "";
+  }
+
+  hfModeSelect.addEventListener("change", syncLocalFields);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    status.classList.remove("is-error");
+    status.textContent = "Saving…";
+    try {
+      const payload = { backend: BACKENDS.HF, hf_mode: hfModeSelect.value };
+      if (hfModeSelect.value === HF_CONNECTION_MODES.LOCAL) {
+        payload.hf_host = hfHostInput.value.trim();
+        if (hfPortInput.value) {
+          payload.hf_port = Number.parseInt(hfPortInput.value, 10);
+        }
+      }
+      const result = await saveBackendConfig(payload);
+      status.textContent =
+        result?.message || (result?.requires_restart ? "Saved. Restart the app to apply." : "Saved.");
+      await onSaved?.();
+    } catch (error) {
+      status.textContent = `Failed to save: ${describeError(error)}`;
+      status.classList.add("is-error");
+    }
+  });
+
+  syncLocalFields();
+
+  return {
+    element,
+    syncFromStatus(payload) {
+      if (Object.values(HF_CONNECTION_MODES).includes(payload?.hf_connection_mode)) {
+        hfModeSelect.value = payload.hf_connection_mode;
+      }
+      if (payload?.hf_direct_host) {
+        hfHostInput.value = payload.hf_direct_host;
+      }
+      if (payload?.hf_direct_port != null) {
+        hfPortInput.value = String(payload.hf_direct_port);
+      }
+      syncLocalFields();
+    },
+  };
+}
+
+function buildVoiceSection() {
+  const select = h("select", { class: "settings-select", name: "voice" });
+  const status = h("p", { class: "settings-status", role: "status", "aria-live": "polite" });
+  const form = h(
+    "form",
+    { class: "settings-form" },
+    h("label", { class: "settings-field" }, h("span", { class: "settings-label" }, "Voice"), select),
+    h(
+      "div",
+      { class: "settings-actions" },
+      h("button", { type: "submit", class: "btn btn--primary" }, "Apply voice")
+    ),
+    status
+  );
+
+  const element = h(
+    "section",
+    { class: "settings-section" },
+    h("h2", { class: "settings-section-title" }, "Voice"),
+    form
+  );
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    status.classList.remove("is-error");
+    if (!select.value) return;
+    status.textContent = "Applying…";
+    try {
+      const result = await applyVoice(select.value);
+      status.textContent = result?.status || "Voice applied.";
+    } catch (error) {
+      status.textContent = `Failed to apply: ${describeError(error)}`;
+      status.classList.add("is-error");
+    }
+  });
+
+  return {
+    element,
+    setOptions(voices, current) {
+      select.replaceChildren();
+      for (const v of voices) {
+        const opt = h("option", { value: v }, v);
+        if (v === current) opt.selected = true;
+        select.appendChild(opt);
+      }
+    },
+  };
+}
+
+function buildStatusSection() {
+  const list = h("dl", { class: "settings-status-grid" });
+  const element = h(
+    "section",
+    { class: "settings-section" },
+    h("h2", { class: "settings-section-title" }, "Current state"),
+    list
+  );
+
+  return {
+    element,
+    render(payload) {
+      list.replaceChildren();
+      list.appendChild(statusRow("Backend", BACKEND_LABELS[payload.backend] || payload.backend || "-"));
+      if (payload.backend !== BACKENDS.GEMINI) {
+        list.appendChild(statusRow("HF connection", formatHfMode(payload.hf_connection_mode)));
+        if (payload.hf_connection_mode === HF_CONNECTION_MODES.LOCAL) {
+          list.appendChild(statusRow("HF target", formatHfTarget(payload)));
+        }
+      }
+      list.appendChild(
+        statusRow("Connection", payload.has_key ? "Ready" : "Missing", payload.has_key ? "ok" : "warn")
+      );
+      if (payload.requires_restart) {
+        list.appendChild(statusRow("Restart", "Required to apply changes", "warn"));
+      }
+    },
+  };
+}
+
+function statusRow(label, value, tone) {
+  return h(
+    "div",
+    { class: ["settings-status-row", tone && `is-${tone}`] },
+    h("dt", { class: "settings-status-label" }, label),
+    h("dd", { class: "settings-status-value" }, value)
+  );
+}
+
+function formatHfMode(mode) {
+  if (mode === HF_CONNECTION_MODES.LOCAL) return "Local";
+  if (mode === HF_CONNECTION_MODES.DEPLOYED) return "Hosted";
+  return "-";
+}
+
+function formatHfTarget(payload) {
+  const host = payload?.hf_direct_host;
+  const port = payload?.hf_direct_port;
+  if (!host) return "-";
+  return `${host}:${port || DEFAULT_HF_PORT}`;
+}
+
+async function refreshStatus({ statusSection, connectionSection, backendSection, signal }) {
+  try {
+    const payload = await untilReady(getStatus, signal);
+    if (signal.aborted) return;
+    statusSection.render(payload);
+    connectionSection.syncFromStatus(payload);
+    await backendSection?.syncFromStatus(payload);
+  } catch {
+    // Status panel just stays empty; not critical for the rest of the UI.
+  }
+}
+
+async function refreshVoices({ voiceSection, signal }) {
+  let voices = [];
+  let current = "";
+  try {
+    voices = await untilReady(listVoices, signal);
+  } catch {
+    voices = [];
+  }
+  try {
+    const data = await getCurrentVoice();
+    current = data?.voice || "";
+  } catch {
+    current = "";
+  }
+  if (signal.aborted) return;
+  voiceSection.setOptions(voices, current);
+}

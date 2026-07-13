@@ -23,17 +23,17 @@ Two ways to use it:
 """
 
 from __future__ import annotations
-
-import logging
 import os
+import logging
 import threading
 import wsgiref.simple_server
-from pathlib import Path
 from typing import Optional
+from pathlib import Path
 
-from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
+
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ _DEFAULT_REDIRECT_PORT = 8789
 
 
 def redirect_port() -> int:
+    """Return the loopback OAuth redirect port from the environment or the default."""
     raw = os.environ.get(_REDIRECT_PORT_ENV)
     if raw is None:
         return _DEFAULT_REDIRECT_PORT
@@ -61,11 +62,13 @@ def redirect_port() -> int:
 
 
 def client_file_path() -> Optional[Path]:
+    """Return the OAuth client-secrets file path from the environment, if configured."""
     path = os.environ.get(_CLIENT_FILE_ENV)
     return Path(path).expanduser() if path else None
 
 
 def token_file_path() -> Path:
+    """Return the path where the saved OAuth token is stored."""
     return Path(os.environ.get(_TOKEN_FILE_ENV, str(_DEFAULT_TOKEN))).expanduser()
 
 
@@ -121,6 +124,7 @@ class CalendarAuth:
     """
 
     def __init__(self) -> None:
+        """Initialize an idle auth flow with no in-flight server or credentials."""
         self._flow: Optional[Flow] = None
         self._server: Optional[wsgiref.simple_server.WSGIServer] = None
         self._receiver: Optional[_CodeReceiver] = None
@@ -130,12 +134,14 @@ class CalendarAuth:
 
     # --- queries -----------------------------------------------------------
     def has_valid_credentials(self) -> bool:
+        """Return whether usable saved credentials are available."""
         try:
             return load_saved_credentials() is not None
         except Exception:
             return False
 
     def get_credentials(self) -> Credentials:
+        """Return saved credentials, raising if the user has not authorized yet."""
         creds = load_saved_credentials()
         if creds is None:
             raise RuntimeError("No valid credentials. Authorize via the UI first.")

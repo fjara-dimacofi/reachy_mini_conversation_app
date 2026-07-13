@@ -61,24 +61,33 @@ def test_config_raises_when_selected_external_profile_is_missing(
         config_mod.Config()
 
 
-def test_backend_provider_defaults_to_hf_when_unset() -> None:
-    """Non-Gemini models should default to the Hugging Face backend."""
-    assert config_mod._normalize_backend_provider(None, None) == config_mod.HF_BACKEND
-    assert config_mod._normalize_backend_provider("", None) == config_mod.HF_BACKEND
-    assert config_mod._normalize_backend_provider(None, "gpt-realtime-2") == config_mod.HF_BACKEND
-    assert config_mod._normalize_backend_provider(None, "gemini-3.1-flash-live-preview") == config_mod.GEMINI_BACKEND
+def test_unknown_backend_provider_falls_back_with_warning(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A stale/unknown BACKEND_PROVIDER (e.g. removed 'openai') falls back to the default with a warning."""
+    monkeypatch.setenv("BACKEND_PROVIDER", "openai")
+    monkeypatch.setenv("MODEL_NAME", "gpt-realtime-2")
+
+    with caplog.at_level("WARNING"):
+        config_mod.refresh_runtime_config_from_env()
+
+    assert "BACKEND_PROVIDER" in caplog.text
+    assert config_mod.config.BACKEND_PROVIDER == config_mod.HF_BACKEND
 
 
-def test_backend_provider_rejects_explicit_unknown_backend() -> None:
-    """An explicit backend typo should fail instead of falling through to the default backend."""
-    with pytest.raises(ValueError, match="Invalid BACKEND_PROVIDER='openia'"):
-        config_mod._normalize_backend_provider("openia", None)
+def test_gemini_backend_provider_is_honored(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Setting BACKEND_PROVIDER=gemini selects the Gemini backend."""
+    monkeypatch.setenv("BACKEND_PROVIDER", "gemini")
+    monkeypatch.delenv("MODEL_NAME", raising=False)
 
+    config_mod.refresh_runtime_config_from_env()
 
-def test_huggingface_backend_does_not_resolve_model_name() -> None:
-    """Hugging Face should rely on the server's model selection."""
-    assert config_mod._resolve_model_name(config_mod.HF_BACKEND, None) == ""
-    assert config_mod._resolve_model_name(config_mod.HF_BACKEND, "gpt-realtime-2") == ""
+    assert config_mod.config.BACKEND_PROVIDER == config_mod.GEMINI_BACKEND
+    assert config_mod.is_gemini_model() is True
+
+    # Reset global config so the selection does not leak into later tests.
+    monkeypatch.delenv("BACKEND_PROVIDER", raising=False)
+    config_mod.refresh_runtime_config_from_env()
 
 
 def test_hf_default_session_url_uses_stable_space_proxy() -> None:
@@ -90,18 +99,12 @@ def test_hf_default_session_url_uses_stable_space_proxy() -> None:
 def test_refresh_runtime_config_reloads_hf_runtime_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     """Instance-local .env reloads should update every env-backed Hugging Face runtime field."""
     monkeypatch.setenv("HF_TOKEN", "hf-runtime-token")
-    monkeypatch.setenv("HF_HOME", "/tmp/reachy-hf-cache")
-    monkeypatch.setenv("LOCAL_VISION_MODEL", "test/local-vision-model")
 
     monkeypatch.setattr(config_mod.config, "HF_TOKEN", None)
-    monkeypatch.setattr(config_mod.config, "HF_HOME", "./old-cache")
-    monkeypatch.setattr(config_mod.config, "LOCAL_VISION_MODEL", "old/model")
 
     config_mod.refresh_runtime_config_from_env()
 
     assert config_mod.config.HF_TOKEN == "hf-runtime-token"
-    assert config_mod.config.HF_HOME == "/tmp/reachy-hf-cache"
-    assert config_mod.config.LOCAL_VISION_MODEL == "test/local-vision-model"
 
 
 @pytest.mark.parametrize(

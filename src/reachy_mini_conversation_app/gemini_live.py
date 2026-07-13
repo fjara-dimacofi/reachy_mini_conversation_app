@@ -1,7 +1,8 @@
 """Gemini Live API handler for real-time audio conversation.
 
-Drop-in alternative to OpenaiRealtimeHandler. Uses the google-genai SDK's
-Live API for bidirectional audio streaming with function calling support.
+A realtime conversation backend built on the google-genai SDK's Live API for
+bidirectional audio streaming with function calling support. Offered alongside
+the default Hugging Face backend; selected via BACKEND_PROVIDER=gemini.
 
 Audio formats (per Gemini Live API spec):
   Input:  16-bit PCM, 16 kHz, mono
@@ -15,13 +16,11 @@ import base64
 import random
 import asyncio
 import logging
-from typing import Any, Dict, List, Final, Tuple, Literal, Optional
+from typing import Any, Dict, List, Final, Tuple, Optional
 from datetime import datetime
 
 import numpy as np
-import gradio as gr
 from google import genai
-from fastrtc import AdditionalOutputs, wait_for_item, audio_to_int16
 from google.genai import types
 from numpy.typing import NDArray
 from scipy.signal import resample
@@ -35,10 +34,11 @@ from reachy_mini_conversation_app.config import (
     config,
 )
 from reachy_mini_conversation_app.prompts import get_session_voice, get_session_instructions
+from reachy_mini_conversation_app.streaming import AdditionalOutputs, wait_for_item, audio_to_int16
 from reachy_mini_conversation_app.idle_policy import start_idle_tool_call
 from reachy_mini_conversation_app.tools.core_tools import (
     ToolDependencies,
-    get_active_tool_specs,
+    get_tool_specs,
 )
 from reachy_mini_conversation_app.conversation_handler import ConversationHandler
 from reachy_mini_conversation_app.camera_frame_encoding import encode_bgr_frame_as_jpeg
@@ -161,39 +161,28 @@ def _resolve_gemini_model(model: str | None) -> str:
 
 
 class GeminiLiveHandler(ConversationHandler):
-    """Gemini Live API handler for fastrtc Stream."""
+    """Gemini Live API realtime conversation handler."""
 
     def __init__(
         self,
         deps: ToolDependencies,
-        gradio_mode: bool = False,
         instance_path: Optional[str] = None,
         startup_voice: Optional[str] = None,
         startup_model: Optional[str] = None,
     ):
         """Initialize the handler."""
-        super().__init__(
-            expected_layout="mono",
-            output_sample_rate=GEMINI_OUTPUT_SAMPLE_RATE,
-            input_sample_rate=GEMINI_INPUT_SAMPLE_RATE,
-        )
+        super().__init__()
 
         self.deps = deps
-        self.gradio_mode = gradio_mode
         self.instance_path = instance_path
         self._voice_override: str | None = _resolve_gemini_startup_voice(startup_voice)
         self._model_override: str | None = startup_model
 
+        self.client: genai.Client | None = None
         self.session: Any = None  # google.genai live session
         self.output_queue: "asyncio.Queue[Tuple[int, NDArray[np.int16]] | AdditionalOutputs]" = asyncio.Queue()
 
-        self.last_activity_time = time.monotonic()
         self.start_time = time.monotonic()
-        self.is_idle_tool_call = False
-
-        # Track API key source (env vs textbox)
-        self._key_source: Literal["env", "textbox"] = "env"
-        self._provided_api_key: str | None = None
 
         # Internal lifecycle flags
         self._connected_event: asyncio.Event = asyncio.Event()
@@ -211,11 +200,14 @@ class GeminiLiveHandler(ConversationHandler):
         """Create a copy of the handler."""
         return GeminiLiveHandler(
             self.deps,
-            self.gradio_mode,
             self.instance_path,
             startup_voice=self._voice_override,
             startup_model=self._model_override,
         )
+
+    def _is_connected(self) -> bool:
+        """Return whether the Gemini Live session is currently open."""
+        return self.session is not None
 
     def _set_listening_state(self, listening: bool) -> None:
         """Avoid queueing redundant listening-state updates."""
@@ -292,7 +284,7 @@ class GeminiLiveHandler(ConversationHandler):
     async def change_voice(self, voice: str) -> str:
         """Change only the voice and restart the session."""
         self._voice_override = voice
-        if getattr(self, "client", None) is not None:
+        if self.client is not None:
             try:
                 await self._restart_session()
                 return f"Voice changed to {voice}."
@@ -321,7 +313,7 @@ class GeminiLiveHandler(ConversationHandler):
         """Change only the model and restart the session."""
         resolved = _resolve_gemini_model(model)
         self._model_override = resolved
-        if getattr(self, "client", None) is not None:
+        if self.client is not None:
             try:
                 await self._restart_session()
                 return f"Model changed to {resolved}."
@@ -333,20 +325,9 @@ class GeminiLiveHandler(ConversationHandler):
     async def start_up(self) -> None:
         """Start the handler with retries on unexpected closure."""
         gemini_api_key = config.GEMINI_API_KEY
-        if self.gradio_mode and not gemini_api_key:
-            await self.wait_for_args()  # type: ignore[no-untyped-call]
-            args = list(self.latest_args)
-            textbox_api_key = args[3] if len(args) > 3 and len(args[3]) > 0 else None
-            if textbox_api_key is not None:
-                gemini_api_key = textbox_api_key
-                self._key_source = "textbox"
-                self._provided_api_key = textbox_api_key
-            else:
-                gemini_api_key = config.GEMINI_API_KEY
-        else:
-            if not gemini_api_key or not gemini_api_key.strip():
-                logger.warning("GEMINI_API_KEY missing. Proceeding with a placeholder (tests/offline).")
-                gemini_api_key = "DUMMY"
+        if not gemini_api_key or not gemini_api_key.strip():
+            logger.warning("GEMINI_API_KEY missing. Proceeding with a placeholder (tests/offline).")
+            gemini_api_key = "DUMMY"
 
         self.client = genai.Client(api_key=gemini_api_key)
 
@@ -388,7 +369,7 @@ class GeminiLiveHandler(ConversationHandler):
                 finally:
                     self.session = None
 
-            if getattr(self, "client", None) is None:
+            if self.client is None:
                 logger.warning("Cannot restart: Gemini client not initialized yet.")
                 return
 
@@ -414,7 +395,7 @@ class GeminiLiveHandler(ConversationHandler):
         voice = _resolve_gemini_voice(self._voice_override or get_session_voice())
 
         # Convert OpenAI-style tool specs to Gemini function declarations
-        tool_specs = get_active_tool_specs(self.deps)
+        tool_specs = get_tool_specs()
         logger.info(
             "Tools to be used in conversation: %s",
             [tool["name"] for tool in tool_specs],
@@ -549,33 +530,23 @@ class GeminiLiveHandler(ConversationHandler):
                 ),
             )
 
-            if send_result_to_model and bg_tool.tool_name == "camera" and self.deps.camera_worker is not None:
-                np_img = self.deps.camera_worker.get_latest_frame()
-                if np_img is not None:
-                    rgb_frame = np.ascontiguousarray(np_img[..., ::-1])
-                else:
-                    rgb_frame = None
-                img = gr.Image(value=rgb_frame)
-                await self.output_queue.put(
-                    AdditionalOutputs({"role": "assistant", "content": img}),
-                )
-
         except Exception as e:
             logger.warning("Error sending tool result to Gemini: %s", e)
 
     async def _video_sender_loop(self) -> None:
         """Send camera frames to Gemini Live for continuous visual context.
 
-        Only runs when a camera_worker is available. Frames are JPEG-encoded
-        and sent via send_realtime_input(video=...). The interval between frames
-        is controlled by config.VIDEO_FRAME_INTERVAL_S (higher = lower API cost).
+        Only runs when the camera is enabled. Frames are pulled from the robot
+        media pipeline, JPEG-encoded, and sent via send_realtime_input(video=...).
+        The interval is controlled by config.VIDEO_FRAME_INTERVAL_S (higher =
+        lower API cost).
         """
         interval = config.VIDEO_FRAME_INTERVAL_S
         logger.info("Video sender loop started (1 frame every %.1fs)", interval)
         while not self._stop_event.is_set():
             try:
-                if self.session and self.deps.camera_worker is not None:
-                    frame = self.deps.camera_worker.get_latest_frame()
+                if self.session is not None:
+                    frame = self.deps.reachy_mini.media.get_frame()
                     if frame is not None:
                         jpeg_bytes = encode_bgr_frame_as_jpeg(frame)
                         await self.session.send_realtime_input(
@@ -611,8 +582,8 @@ class GeminiLiveHandler(ConversationHandler):
                 # Start the background tool manager
                 self.tool_manager.start_up(tool_callbacks=[self._handle_tool_result])
 
-                # Start video sender if camera is available
-                if self.deps.camera_worker is not None:
+                # Start video sender if the camera is enabled
+                if self.deps.camera_enabled:
                     video_task = asyncio.create_task(self._video_sender_loop(), name="gemini-video-sender")
 
                 # session.receive() yields responses for the current turn then completes.
@@ -669,7 +640,7 @@ class GeminiLiveHandler(ConversationHandler):
                                             if len(audio_array) == 0:
                                                 continue
 
-                                            self.last_activity_time = time.monotonic()
+                                            self._mark_activity("gemini audio output")
 
                                             await self.output_queue.put(
                                                 (GEMINI_OUTPUT_SAMPLE_RATE, audio_array),
@@ -745,10 +716,11 @@ class GeminiLiveHandler(ConversationHandler):
             return
 
     async def emit(self) -> Tuple[int, NDArray[np.int16]] | AdditionalOutputs | None:
-        """Emit audio frame to be played by the speaker."""
+        """Emit audio frame to be played by the speaker, running idle behavior when due."""
         now = time.monotonic()
 
-        # Handle idle
+        # Local idle behavior. The interval is UI-configurable via
+        # config.IDLE_INTERVAL_S (0 disables idle behavior).
         idle_duration = now - self.last_activity_time
         if (
             config.IDLE_INTERVAL_S > 0
@@ -800,7 +772,7 @@ class GeminiLiveHandler(ConversationHandler):
             return
 
         available_tool_names = {
-            spec["name"] for spec in get_active_tool_specs(self.deps) if isinstance(spec.get("name"), str)
+            spec["name"] for spec in get_tool_specs() if isinstance(spec.get("name"), str)
         }
         await start_idle_tool_call(
             deps=self.deps,
@@ -820,7 +792,7 @@ class GeminiLiveHandler(ConversationHandler):
         if not self.session:
             logger.debug("No session, cannot send text input")
             return
-        self.last_activity_time = time.monotonic()
+        self._mark_activity("gemini text input")
         msg = (
             f"Say the following text back exactly, word for word, with nothing added: {text}"
             if verbatim

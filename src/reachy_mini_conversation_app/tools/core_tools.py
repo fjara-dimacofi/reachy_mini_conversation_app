@@ -9,7 +9,7 @@ import logging
 import importlib
 import importlib.util
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, List, Callable, ClassVar, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Callable, ClassVar, Sequence, TypedDict
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -41,9 +41,18 @@ class ToolDependencies:
     movement_manager: Any  # MovementManager from moves.py
     # Optional deps
     instance_path: str | Path | None = None
-    camera_worker: Any | None = None  # CameraWorker for frame buffering
-    vision_processor: Any | None = None
+    camera_enabled: bool = False
     motion_duration_s: float = 1.0
+    go_to_sleep: Callable[[], dict[str, Any]] | None = None
+
+
+class ToolSpec(TypedDict):
+    """Function-calling spec for a tool, in the OpenAI-compatible shape."""
+
+    type: Literal["function"]
+    name: str
+    description: str
+    parameters: dict[str, Any]  # arbitrary JSON Schema
 
 
 class Tool(abc.ABC):
@@ -65,7 +74,7 @@ class Tool(abc.ABC):
     description: str
     parameters_schema: Dict[str, Any]
 
-    def spec(self) -> Dict[str, Any]:
+    def spec(self) -> ToolSpec:
         """Return the function spec for LLM consumption."""
         return {
             "type": "function",
@@ -81,7 +90,7 @@ class Tool(abc.ABC):
 
 
 ALL_TOOLS: Dict[str, Tool] = {}
-ALL_TOOL_SPECS: List[Dict[str, Any]] = []
+ALL_TOOL_SPECS: list[ToolSpec] = []
 _TOOLS_INITIALIZED = False
 _TOOLS_SIGNATURE: tuple[str, str, str | None, bool, str | None] | None = None
 _TOOLS_INSTANCE_PATH: str | Path | None = None
@@ -290,7 +299,7 @@ def _resolve_profile_tools_txt_path() -> tuple[str, Path]:
     profile = config.REACHY_MINI_CUSTOM_PROFILE or "default"
     logger.info(f"Loading tools for profile: {profile}")
 
-    profile_dir = config.PROFILES_DIRECTORY / profile
+    profile_dir = config.resolve_profile_dir(profile)
     tools_txt_path = profile_dir / "tools.txt"
     default_tools_txt_path = DEFAULT_PROFILES_PATH / "default" / "tools.txt"
 
@@ -360,8 +369,8 @@ def _read_profile_tool_names() -> list[str]:
 
 
 def _resolve_remote_tools(tool_names: list[str], instance_path: str | Path | None) -> list[RemoteMcpTool]:
-    """Resolve installed public Space tools enabled by the active profile."""
-    from reachy_mini_conversation_app.tool_spaces import read_installed_tool_spaces, resolve_public_tool_space_sync
+    """Resolve installed Space tools enabled by the active profile."""
+    from reachy_mini_conversation_app.tool_spaces import resolve_tool_space_sync, read_installed_tool_spaces
 
     remote_tools: list[RemoteMcpTool] = []
     for installed_space in read_installed_tool_spaces(instance_path).spaces:
@@ -374,7 +383,7 @@ def _resolve_remote_tools(tool_names: list[str], instance_path: str | Path | Non
             continue
 
         try:
-            resolved_space = resolve_public_tool_space_sync(installed_space.slug)
+            resolved_space = resolve_tool_space_sync(installed_space.slug)
         except Exception as exc:
             logger.warning(
                 "Space '%s' is unavailable, skipping its tools (%s): %s",
@@ -426,7 +435,7 @@ def _load_profile_tools(tool_names: list[str], remote_tool_names: set[str]) -> L
 
         loaded = False
         profile_error = None
-        profile_tool_file = config.PROFILES_DIRECTORY / profile / f"{tool_name}.py"
+        profile_tool_file = config.resolve_profile_dir(profile) / f"{tool_name}.py"
 
         try:
             tool_classes, reused_cache = _load_cached_tool_classes(
@@ -515,19 +524,11 @@ def initialize_tools(instance_path: str | Path | None = None, *, force: bool = F
     _TOOLS_SIGNATURE = signature
 
 
-def get_tool_specs(exclusion_list: list[str] | None = None) -> list[Dict[str, Any]]:
+def get_tool_specs(exclusion_list: list[str] | None = None) -> list[ToolSpec]:
     """Get tool specs, optionally excluding some tools."""
     initialize_tools()
     exclusion_list = exclusion_list or []
-    return [spec for spec in ALL_TOOL_SPECS if spec.get("name") not in exclusion_list]
-
-
-def get_active_tool_specs(deps: ToolDependencies) -> list[Dict[str, Any]]:
-    """Get tool specs filtered by what the current session deps support."""
-    exclusion_list: list[str] = []
-    if not (deps.camera_worker and deps.camera_worker.head_tracker):
-        exclusion_list.append("head_tracking")
-    return get_tool_specs(exclusion_list)
+    return [spec for spec in ALL_TOOL_SPECS if spec["name"] not in exclusion_list]
 
 
 # Dispatcher
