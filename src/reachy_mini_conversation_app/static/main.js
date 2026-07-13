@@ -566,6 +566,7 @@ async function init() {
     }
 
     if (privacyNotice) show(privacyNotice, true);
+    show(backendPanel, true);
     if (st) renderCredentialPanels(st);
     show(personalityPanel, personalityUiReady);
     show(sayPanel, personalityUiReady);
