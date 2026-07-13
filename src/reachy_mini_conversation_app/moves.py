@@ -38,7 +38,7 @@ from numpy.typing import NDArray
 from reachy_mini import ReachyMini
 from reachy_mini.utils import create_head_pose
 from reachy_mini.motion.move import Move
-from reachy_mini.utils.interpolation import linear_pose_interpolation
+from reachy_mini.utils.interpolation import compose_world_offset, linear_pose_interpolation
 
 
 logger = logging.getLogger(__name__)
@@ -186,9 +186,19 @@ class MovementManager:
     def __init__(
         self,
         current_robot: ReachyMini,
+        camera_worker: Any = None,
     ):
-        """Initialize movement manager."""
+        """Initialize movement manager.
+
+        ``camera_worker`` is optional; when provided, its face-tracking offsets
+        are composed onto the primary head pose each tick so the robot looks at
+        the detected face.
+        """
         self.current_robot = current_robot
+        self.camera_worker = camera_worker
+        # Cache the last offset tuple -> secondary head pose to skip rebuilding it.
+        self._cached_face_offsets: Tuple[float, float, float, float, float, float] | None = None
+        self._cached_secondary_head: NDArray[np.float32] | None = None
 
         # Single timing source for durations
         self._now = time.monotonic
@@ -487,6 +497,38 @@ class MovementManager:
 
         return antennas_cmd
 
+    def _apply_face_tracking(self, head: NDArray[np.float32]) -> NDArray[np.float32]:
+        """Compose the camera worker's face-tracking offset onto the primary head pose.
+
+        The camera worker produces a world-frame head offset (translation + euler
+        rotation) and interpolates it back to neutral when a face is lost or head
+        tracking is disabled, so a neutral offset is a no-op here.
+        """
+        if self.camera_worker is None:
+            return head
+
+        offsets = self.camera_worker.get_face_tracking_offsets()
+        if offsets == (0.0, 0.0, 0.0, 0.0, 0.0, 0.0):
+            return head
+
+        if offsets == self._cached_face_offsets and self._cached_secondary_head is not None:
+            secondary_head = self._cached_secondary_head
+        else:
+            secondary_head = create_head_pose(
+                x=offsets[0],
+                y=offsets[1],
+                z=offsets[2],
+                roll=offsets[3],
+                pitch=offsets[4],
+                yaw=offsets[5],
+                degrees=False,
+                mm=False,
+            )
+            self._cached_face_offsets = offsets
+            self._cached_secondary_head = secondary_head
+
+        return compose_world_offset(head, secondary_head, reorthonormalize=False)
+
     def _issue_control_command(
         self, head: NDArray[np.float32], antennas: Tuple[float, float], body_yaw: float
     ) -> None:
@@ -681,6 +723,9 @@ class MovementManager:
 
             # 4) Apply listening antenna freeze or blend-back
             antennas_cmd = self._calculate_blended_antennas(antennas)
+
+            # 4b) Compose the optional face-tracking head offset onto the primary pose
+            head = self._apply_face_tracking(head)
 
             # 5) Single set_target call - the only control point
             self._issue_control_command(head, antennas_cmd, body_yaw)

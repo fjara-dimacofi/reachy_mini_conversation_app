@@ -63,7 +63,9 @@
             # So uv can build pycairo/pygobject sdists outside the dev shell.
             export PKG_CONFIG_PATH=${lib.makeSearchPath "lib/pkgconfig" (map lib.getDev buildDeps)}
 
-            uv sync
+            # mediapipe_vision: the daemon spawns the app with no CLI args, so the
+            # default head tracker (mediapipe) must be importable.
+            uv sync --extra mediapipe_vision
 
             # The daemon scrubs GI_TYPELIB_PATH / GST_PLUGIN_SYSTEM_PATH_1_0
             # from the env of app subprocesses and expects the venv to restore

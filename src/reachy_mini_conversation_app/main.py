@@ -18,6 +18,7 @@ from reachy_mini_conversation_app import app_lifecycle
 from reachy_mini_conversation_app.utils import (
     parse_args,
     setup_logger,
+    initialize_camera_and_vision,
     log_connection_troubleshooting,
 )
 
@@ -155,13 +156,16 @@ def run(
 
     app_lifecycle.wake_up_if_sleeping(robot, logger)
 
-    movement_manager = MovementManager(current_robot=robot)
+    camera_worker = initialize_camera_and_vision(args, robot)
+
+    movement_manager = MovementManager(current_robot=robot, camera_worker=camera_worker)
 
     deps = ToolDependencies(
         reachy_mini=robot,
         movement_manager=movement_manager,
         instance_path=instance_path,
         camera_enabled=not args.no_camera,
+        camera_worker=camera_worker,
     )
 
     def build_handler(startup_voice: Optional[str] = None) -> ConversationHandler:
@@ -297,6 +301,8 @@ def run(
 
     # Each async service → its own thread/loop
     movement_manager.start()
+    if camera_worker is not None:
+        camera_worker.start()
     # Audio-reactive head motion is driven by the daemon's wobbler, which
     # taps the media pipeline at push_audio_sample. The console stream pushes
     # assistant audio through that pipeline directly.
@@ -328,6 +334,12 @@ def run(
     finally:
         if own_ui_server is not None:
             own_ui_server.should_exit = True
+
+        if camera_worker is not None:
+            try:
+                camera_worker.stop()
+            except Exception as e:
+                logger.debug("Error stopping camera worker: %s", e)
 
         sleep_result = run_go_to_sleep_tool()
         if "error" in sleep_result:

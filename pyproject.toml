@@ -36,6 +36,12 @@ dependencies = [
     "mcp>=1.27.1",
 ]
 
+[project.optional-dependencies]
+# Local in-process head tracking via reachy_mini_toolbox's MediaPipe backend.
+mediapipe_vision = [
+  "mediapipe==0.10.14",
+]
+
 [dependency-groups]
 dev = [
   "pytest",

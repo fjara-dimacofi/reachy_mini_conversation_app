@@ -2,13 +2,26 @@ from __future__ import annotations
 import logging
 import argparse
 import warnings
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+
+if TYPE_CHECKING:
+    from reachy_mini import ReachyMini
 
 
 def parse_args() -> tuple[argparse.Namespace, list]:  # type: ignore
     """Parse command line arguments."""
     parser = argparse.ArgumentParser("Reachy Mini Conversation App")
     parser.add_argument("--no-camera", default=False, action="store_true", help="Disable camera usage")
+    parser.add_argument(
+        "--head-tracker",
+        choices=["mediapipe", "none"],
+        default="mediapipe",
+        help=(
+            "Local head-tracking backend: 'mediapipe' uses reachy_mini_toolbox in process "
+            "(requires the mediapipe_vision extra). Pass 'none' to disable. Defaults to mediapipe."
+        ),
+    )
     parser.add_argument(
         "--ui",
         default=False,
@@ -47,6 +60,36 @@ def parse_args() -> tuple[argparse.Namespace, list]:  # type: ignore
 
     tool_spaces_subparsers.add_parser("list", help="List installed Space tool sources")
     return parser.parse_known_args()
+
+
+def initialize_camera_and_vision(args: argparse.Namespace, current_robot: "ReachyMini") -> Any:
+    """Initialize the optional camera worker with in-process head tracking.
+
+    Returns a running-capable CameraWorker when head tracking is enabled and its
+    backend imports successfully, otherwise None. A missing optional dependency
+    (e.g. the mediapipe_vision extra) is logged and degrades to no head tracking
+    rather than raising, so the app still starts.
+    """
+    logger = logging.getLogger(__name__)
+
+    if args.no_camera or args.head_tracker in (None, "none"):
+        return None
+
+    try:
+        from reachy_mini_conversation_app.camera_worker import CameraWorker
+        from reachy_mini_conversation_app.vision.head_tracking.mediapipe import MediapipeHeadTracker
+
+        head_tracker = MediapipeHeadTracker()
+        logger.info("Using mediapipe head tracker in process")
+    except Exception as e:
+        logger.warning(
+            "Head tracking unavailable (%s). Continuing without it. "
+            "Install the extra to enable it: uv sync --extra mediapipe_vision",
+            e,
+        )
+        return None
+
+    return CameraWorker(current_robot, head_tracker)
 
 
 def setup_logger(debug: bool) -> logging.Logger:
